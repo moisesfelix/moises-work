@@ -1,44 +1,26 @@
 import { createStore } from 'vuex'
+import db from '../db.json' with { type: 'json' }
 
 const store = createStore({
   state() {
     return {
-      projects: [
-        {
-          id: 1,
-          title: 'Project 1',
-          description: 'This is a web project.',
-          image: 'https://via.placeholder.com/300',
-          tags: ['Vue', 'Vite'],
-          category: ['web', 'fullstack']
-        },
-        {
-          id: 2,
-          title: 'Project 2',
-          description: 'This is a mobile project.',
-          image: 'https://via.placeholder.com/300',
-          tags: ['React Native', 'Firebase'],
-          category: ['mobile']
-        },
-        {
-          id: 3,
-          title: 'Project 3',
-          description: 'This is an AI project.',
-          image: 'https://via.placeholder.com/300',
-          tags: ['Python', 'TensorFlow'],
-          category: ['ai']
-        }
-      ]
+      projects: db.projects,
+      articles: db.articles,
+      tutorials: db.tutorials,
+      skills: db.skills,
+      experiences: db.experiences
     }
   },
-  mutations: {
-    // your mutations
-  },
-  actions: {
-    // your actions
-  },
   getters: {
-    // your getters
+    getArticleBySlug: (state) => (slug) => {
+        return state.articles.find(article => article.slug === slug);
+    },
+    getTutorialBySlug: (state) => (slug) => {
+        return state.tutorials.find(tutorial => tutorial.slug === slug);
+    },
+    getLatestArticles: (state) => (limit = 3) => {
+        return state.articles.slice(0, limit);
+    }
   }
 })
 

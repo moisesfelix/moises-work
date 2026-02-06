@@ -10,11 +10,12 @@
                   </span>
                   <h1>Transformando ideias em soluções digitais</h1>
                   <p>Sou um desenvolvedor FullStack com experiência em diversas tecnologias e apaixonado por ensinar programação.</p>
-                  <p class="typing-text">{{ typingText }}<span class="cursor">|</span></p>
+                  <p class="typing-text">{{ typingText }}</p>
                   
                   <div class="social-links">
-                      <a href="https://github.com" target="_blank" aria-label="GitHub"><i class="fab fa-github"></i></a>
-                      <a href="https://linkedin.com" target="_blank" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                      <a href="https://github.com" target="_blank"><i class="fab fa-github"></i></a>
+                      <a href="https://linkedin.com" target="_blank"><i class="fab fa-linkedin"></i></a>
+                      <a href="https://codepen.io" target="_blank"><i class="fab fa-codepen"></i></a>
                   </div>
                   
                   <div style="margin-top: 40px; display: flex; gap: 15px; flex-wrap: wrap;">
@@ -35,14 +36,35 @@
           </div>
       </section>
 
-      <!-- About Stats -->
-      <section class="about" style="padding-top: 0;">
+      <!-- About -->
+      <section class="about">
           <div class="container">
+              <h2>Sobre Mim</h2>
+              <p>Com mais de 5 anos de experiência em desenvolvimento web e mobile.</p>
+              
               <div class="about-stats">
-                  <div v-for="(stat, index) in stats" :key="index" class="stat-card">
-                      <i :class="stat.icon" style="font-size: 2rem; color: var(--primary); margin-bottom: 15px;"></i>
-                      <div class="counter" ref="counters" :data-target="stat.value">0</div>
-                      <p>{{ stat.label }}</p>
+                  <div class="stat-card">
+                      <i class="fas fa-code"></i>
+                      <div class="counter">50</div>
+                      <p>Projetos Concluídos</p>
+                  </div>
+                  
+                  <div class="stat-card">
+                      <i class="fas fa-users"></i>
+                      <div class="counter">25</div>
+                      <p>Clientes Satisfeitos</p>
+                  </div>
+                  
+                  <div class="stat-card">
+                      <i class="fas fa-hourglass-half"></i>
+                      <div class="counter">5</div>
+                      <p>Anos de Experiência</p>
+                  </div>
+                  
+                  <div class="stat-card">
+                      <i class="fas fa-chalkboard-teacher"></i>
+                      <div class="counter">200</div>
+                      <p>Alunos Ensinados</p>
                   </div>
               </div>
           </div>
@@ -54,9 +76,18 @@
               <h2>Projetos em Destaque</h2>
               
               <div class="portfolio-grid">
-                  <ProjectCard v-for="project in projects" 
-                               :key="project.id" 
-                               :project="project" />
+                  <div v-for="project in projects.slice(0, 3)" :key="project.id" class="portfolio-item">
+                      <div class="portfolio-img">
+                          <img :src="project.image" :alt="project.title">
+                      </div>
+                      <div class="portfolio-info" style="padding: 25px;">
+                          <h3>{{ project.title }}</h3>
+                          <p>{{ project.description }}</p>
+                          <div class="portfolio-tags">
+                              <span v-for="tag in project.tags" :key="tag" class="tech-tag">{{ tag }}</span>
+                          </div>
+                      </div>
+                  </div>
               </div>
               
               <div style="text-align: center; margin-top: 50px;">
@@ -78,7 +109,7 @@
                           <img :src="article.image" :alt="article.title">
                           <div class="blog-category">{{ article.category }}</div>
                       </div>
-                      <div class="portfolio-info" style="padding: 25px; flex: 1;">
+                      <div class="portfolio-info" style="padding: 25px;">
                           <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
                               <span><i class="fas fa-calendar"></i> {{ article.date }}</span>
                               <span><i class="far fa-clock"></i> {{ article.readTime }}</span>
@@ -99,102 +130,74 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
-import ProjectCard from '@/components/ProjectCard.vue';
 
 const store = useStore();
 
 const typingText = ref('');
 const typingIndex = ref(0);
-const typingSpeed = ref(100);
+const typingSpeed = 100;
 const typingTexts = [
     'React | Vue.js | Node.js | IA & Machine Learning',
     'FullStack Developer | Professor | Tech Enthusiast',
     'Turning ideas into digital solutions'
 ];
 const currentTextIndex = ref(0);
-const isDeleting = ref(false);
 
-const stats = ref([
-    { icon: 'fas fa-code', value: 50, label: 'Projetos Concluídos' },
-    { icon: 'fas fa-users', value: 25, label: 'Clientes Satisfeitos' },
-    { icon: 'fas fa-hourglass-half', value: 5, label: 'Anos de Experiência' },
-    { icon: 'fas fa-chalkboard-teacher', value: 200, label: 'Alunos Ensinados' }
-]);
-
-const counters = ref([]);
-
-const projects = computed(() => store.state.projects.slice(0, 3));
+const projects = computed(() => store.state.projects);
 const articles = computed(() => store.getters.getLatestArticles(3));
 
 const startTyping = () => {
-    const currentText = typingTexts[currentTextIndex.value];
-    
-    if (isDeleting.value) {
-        typingText.value = currentText.substring(0, typingIndex.value - 1);
-        typingIndex.value--;
-        typingSpeed.value = 50;
-    } else {
-        typingText.value = currentText.substring(0, typingIndex.value + 1);
-        typingIndex.value++;
-        typingSpeed.value = 100;
-    }
-    
-    if (!isDeleting.value && typingIndex.value === currentText.length) {
-        isDeleting.value = true;
-        typingSpeed.value = 2000;
-    } else if (isDeleting.value && typingIndex.value === 0) {
-        isDeleting.value = false;
-        currentTextIndex.value = (currentTextIndex.value + 1) % typingTexts.length;
-        typingSpeed.value = 500;
-    }
-    
-    setTimeout(startTyping, typingSpeed.value);
-};
-
-const animateCounter = (el, target) => {
-    let count = 0;
-    const increment = target / 50;
-    const update = () => {
-        count += increment;
-        if (count < target) {
-            el.textContent = Math.ceil(count);
-            requestAnimationFrame(update);
+    const type = () => {
+        const currentText = typingTexts[currentTextIndex.value];
+        
+        if (typingIndex.value < currentText.length) {
+            typingText.value += currentText.charAt(typingIndex.value);
+            typingIndex.value++;
+            setTimeout(type, typingSpeed);
         } else {
-            el.textContent = target + "+";
+            setTimeout(() => {
+                deleteText();
+            }, 2000);
         }
     };
-    update();
+    
+    type();
 };
 
-const setupObserver = () => {
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const counter = entry.target;
-                const target = parseInt(counter.getAttribute('data-target'));
-                animateCounter(counter, target);
-                observer.unobserve(counter);
-            }
-        });
-    }, { threshold: 0.5 });
-    
-    if (counters.value) {
-        counters.value.forEach(el => observer.observe(el));
+const deleteText = () => {
+    if (typingText.value.length > 0) {
+        typingText.value = typingText.value.slice(0, -1);
+        setTimeout(() => deleteText(), 50);
+    } else {
+        typingIndex.value = 0;
+        currentTextIndex.value = (currentTextIndex.value + 1) % typingTexts.length;
+        setTimeout(() => startTyping(), 500);
     }
+};
+
+const animateCounters = () => {
+    const counters = document.querySelectorAll('.counter');
+    counters.forEach(counter => {
+        const target = parseInt(counter.textContent);
+        let count = 0;
+        const increment = target / 100;
+        
+        const updateCounter = () => {
+            if (count < target) {
+                count += increment;
+                counter.textContent = Math.floor(count);
+                setTimeout(updateCounter, 20);
+            } else {
+                counter.textContent = target;
+            }
+        };
+        
+        updateCounter();
+    });
 };
 
 onMounted(() => {
     startTyping();
-    setupObserver();
+    animateCounters();
 });
 </script>
-
-<style scoped>
-.hero {
-    padding-top: 180px;
-    padding-bottom: 120px;
-    position: relative;
-    overflow: hidden;
-}
-/* Outros estilos específicos da Home podem vir aqui */
-</style>

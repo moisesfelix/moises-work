@@ -1,17 +1,78 @@
 <template>
-  <div class="article-container">
-    <h2>Article</h2>
-    <p>Coming soon...</p>
+  <div class="article-page">
+      <div class="container">
+          <div v-if="article">
+              <div class="article-header">
+                  <h1>{{ article.title }}</h1>
+                  <div class="article-meta">
+                      <span><i class="fas fa-calendar"></i> {{ article.date }}</span>
+                      <span><i class="far fa-clock"></i> {{ article.readTime }}</span>
+                      <span>{{ article.category }}</span>
+                  </div>
+              </div>
+              
+              <img :src="article.image" :alt="article.title" class="article-image">
+              
+              <div class="article-content" v-html="article.content"></div>
+              
+              <div v-for="(codeBlock, index) in article.codeBlocks" :key="index" class="code-block">
+                  <div class="code-header">
+                      <span class="code-language">{{ codeBlock.language }}</span>
+                      <button class="copy-btn" @click="copyCode(codeBlock.code, index)">
+                          <i :class="copiedIndex === index ? 'fas fa-check' : 'far fa-copy'"></i>
+                          {{ copiedIndex === index ? 'Copiado!' : 'Copiar' }}
+                      </button>
+                  </div>
+                  <pre><code class="hljs">{{ codeBlock.code }}</code></pre>
+              </div>
+              
+              <div style="margin-top: 50px; text-align: center;">
+                  <router-link to="/blog" class="btn">
+                      <i class="fas fa-arrow-left"></i> Voltar para Artigos
+                  </router-link>
+              </div>
+          </div>
+          <div v-else>
+              <p>Artigo não encontrado.</p>
+          </div>
+      </div>
   </div>
 </template>
 
 <script setup>
-</script>
+import { ref, computed, onMounted } from 'vue';
+import { useStore } from 'vuex';
+import { useRoute } from 'vue-router';
+import hljs from 'highlight.js';
 
-<style scoped>
-.article-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-}
-</style>
+const store = useStore();
+const route = useRoute();
+
+const copiedIndex = ref(null);
+
+const article = computed(() => store.getters.getArticleBySlug(route.params.slug));
+
+const copyCode = async (code, index) => {
+    try {
+        await navigator.clipboard.writeText(code);
+        copiedIndex.value = index;
+        // You might want to use a toast notification here
+        console.log('Código copiado para a área de transferência!');
+        
+        setTimeout(() => {
+            copiedIndex.value = null;
+        }, 2000);
+    } catch (err) {
+        console.error('Erro ao copiar:', err);
+    }
+};
+
+onMounted(() => {
+    if (article.value) {
+        // It's better to let a directive handle this, but for this case, we'll do it manually.
+        document.querySelectorAll('pre code').forEach((block) => {
+            hljs.highlightElement(block);
+        });
+    }
+});
+</script>

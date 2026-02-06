@@ -1,52 +1,35 @@
 <template>
-  <div class="tutorials-container">
-    <h2>Tutorials</h2>
-    <div v-if="tutorials.length">
-      <Tutorial
-        v-for="tutorial in tutorials"
-        :key="tutorial.id"
-        :tutorial="tutorial"
-      />
-    </div>
-    <div v-else>
-      <p>No tutorials available at the moment.</p>
-    </div>
-  </div>
+  <section class="blog" style="padding-top: 180px;">
+      <div class="container">
+          <h2>Tutoriais</h2>
+          
+          <div class="blog-grid">
+              <div v-for="tutorial in tutorials" :key="tutorial.id" class="blog-item">
+                  <div class="portfolio-img">
+                      <img :src="tutorial.image" :alt="tutorial.title">
+                      <div class="blog-category">{{ tutorial.category }}</div>
+                  </div>
+                  <div class="portfolio-info" style="padding: 25px;">
+                      <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                          <span><i class="fas fa-clock"></i> {{ tutorial.duration }}</span>
+                          <span><i class="fas fa-signal"></i> {{ tutorial.difficulty }}</span>
+                      </div>
+                      <h3>{{ tutorial.title }}</h3>
+                      <p>{{ tutorial.excerpt }}</p>
+                      <router-link :to="'/tutorial/' + tutorial.slug" class="btn" style="margin-top: 20px; padding: 10px 25px;">
+                          <i class="fas fa-play-circle"></i> Começar Tutorial
+                      </router-link>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </section>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import Tutorial from './Tutorial.vue';
+import { computed } from 'vue';
+import { useStore } from 'vuex';
 
-const tutorials = ref([
-  {
-    id: 1,
-    title: 'Getting Started with Vue 3',
-    description: 'A comprehensive guide to start your journey with Vue 3, covering the basics of components, reactivity, and the Composition API.',
-    link: 'https://vuejs.org/guide/introduction.html',
-    tags: ['Vue 3', 'JavaScript', 'Frontend']
-  },
-  {
-    id: 2,
-    title: 'Interactive Data Visualization with D3.js',
-    description: 'Learn how to create beautiful and interactive data visualizations for the web using the powerful D3.js library.',
-    link: 'https://d3js.org/',
-    tags: ['D3.js', 'Data Visualization', 'JavaScript']
-  },
-  {
-    id: 3,
-    title: 'Building a REST API with Node.js and Express',
-    description: 'A step-by-step tutorial on building a robust RESTful API using Node.js and the Express framework.',
-    link: 'https://expressjs.com/en/starter/hello-world.html',
-    tags: ['Node.js', 'Express', 'Backend', 'API']
-  }
-]);
+const store = useStore();
+const tutorials = computed(() => store.state.tutorials);
 </script>
-
-<style scoped>
-.tutorials-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-}
-</style>
