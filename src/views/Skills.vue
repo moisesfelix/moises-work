@@ -53,23 +53,24 @@
   </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
 
 const store = useStore();
 
-const frontendSkills = computed(() => store.state.skills.frontend);
-const backendSkills = computed(() => store.state.skills.backend);
-const aiDevopsSkills = computed(() => store.state.skills.ai_devops);
+const frontendSkills = computed(() => (store.state.skills as any).frontend);
+const backendSkills = computed(() => (store.state.skills as any).backend);
+const aiDevopsSkills = computed(() => (store.state.skills as any).ai_devops);
 
 const animateSkillBars = () => {
     const skillBars = document.querySelectorAll('.skill-progress-bar');
     skillBars.forEach(bar => {
-        const width = bar.style.width;
-        bar.style.width = '0%';
+        const progressBar = bar as HTMLElement;
+        const width = progressBar.style.width;
+        progressBar.style.width = '0%';
         setTimeout(() => {
-            bar.style.width = width;
+            progressBar.style.width = width;
         }, 100);
     });
 };

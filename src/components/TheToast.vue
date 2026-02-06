@@ -16,19 +16,27 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
 
-const toasts = ref([]);
+interface Toast {
+  id: number;
+  type: 'success' | 'error' | 'warning' | 'info';
+  title: string;
+  message: string;
+  duration?: number;
+}
+
+const toasts = ref<Toast[]>([]);
 let idCounter = 0;
 
-const addToast = (toast) => {
+const addToast = (toast: Partial<Toast>) => {
   const id = idCounter++;
-  const newToast = {
+  const newToast: Toast = {
     id,
     type: toast.type || 'info',
     title: toast.title || 'Notification',
-    message: toast.message,
+    message: toast.message || '',
     duration: toast.duration || 5000,
   };
   toasts.value.unshift(newToast);
@@ -38,14 +46,14 @@ const addToast = (toast) => {
   }, newToast.duration);
 };
 
-const removeToast = (id) => {
+const removeToast = (id: number) => {
   const index = toasts.value.findIndex(toast => toast.id === id);
   if (index > -1) {
     toasts.value.splice(index, 1);
   }
 };
 
-const iconClass = (type) => {
+const iconClass = (type: Toast['type']) => {
   const icons = {
     success: 'fas fa-check-circle',
     error: 'fas fa-times-circle',

@@ -127,7 +127,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
 
@@ -178,17 +178,17 @@ const deleteText = () => {
 const animateCounters = () => {
     const counters = document.querySelectorAll('.counter');
     counters.forEach(counter => {
-        const target = parseInt(counter.textContent);
+        const target = parseInt(counter.textContent || '0');
         let count = 0;
         const increment = target / 100;
         
         const updateCounter = () => {
             if (count < target) {
                 count += increment;
-                counter.textContent = Math.floor(count);
+                counter.textContent = Math.floor(count).toString();
                 setTimeout(updateCounter, 20);
             } else {
-                counter.textContent = target;
+                counter.textContent = target.toString();
             }
         };
         

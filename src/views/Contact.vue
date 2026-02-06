@@ -67,12 +67,19 @@
   </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, inject } from 'vue';
 
-const showToast = inject('showToast');
+const showToast = inject('showToast') as (toast: { type: string; title: string; message: string; }) => void;
 
-const form = ref({
+interface Form {
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+}
+
+const form = ref<Form>({
     name: '',
     email: '',
     subject: '',

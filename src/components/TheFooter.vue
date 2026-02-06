@@ -37,11 +37,11 @@
     </footer>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, inject } from 'vue';
 
 const newsletterEmail = ref('');
-const showToast = inject('showToast');
+const showToast = inject('showToast') as (message: string) => void;
 
 const subscribeNewsletter = () => {
     if (newsletterEmail.value) {

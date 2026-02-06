@@ -20,7 +20,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, provide, onMounted } from 'vue';
 import TheHeader from '@/components/TheHeader.vue';
 import TheFooter from '@/components/TheFooter.vue';
@@ -28,12 +28,11 @@ import TheToast from '@/components/TheToast.vue';
 
 const toast = ref(null);
 
-const showToast = (toastDetails) => {
+const showToast = (toastDetails: { message: string; type: string, title: string }) => {
   if (toast.value) {
-    toast.value.addToast(toastDetails);
+    (toast.value as any).addToast(toastDetails);
   }
 };
 
 provide('showToast', showToast);
-
 </script>

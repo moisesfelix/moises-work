@@ -39,7 +39,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed, onMounted, inject } from 'vue';
 import { useStore } from 'vuex';
 import { useRoute } from 'vue-router';
@@ -47,13 +47,13 @@ import hljs from 'highlight.js';
 
 const store = useStore();
 const route = useRoute();
-const showToast = inject('showToast');
+const showToast = inject('showToast') as (toast: { type: string; title: string; message: string; }) => void;
 
-const copiedIndex = ref(null);
+const copiedIndex = ref<number | null>(null);
 
-const article = computed(() => store.getters.getArticleBySlug(route.params.slug));
+const article = computed(() => store.getters.getArticleBySlug(route.params.slug as string));
 
-const copyCode = async (code, index) => {
+const copyCode = async (code: string, index: number) => {
     try {
         await navigator.clipboard.writeText(code);
         copiedIndex.value = index;
@@ -80,7 +80,7 @@ onMounted(() => {
     if (article.value) {
         // It's better to let a directive handle this, but for this case, we'll do it manually.
         document.querySelectorAll('pre code').forEach((block) => {
-            hljs.highlightElement(block);
+            hljs.highlightElement(block as HTMLElement);
         });
     }
 });

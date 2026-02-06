@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import Home from '@/views/Home.vue'
 import About from '@/views/About.vue'
 import Experience from '@/views/Experience.vue'
@@ -10,7 +10,7 @@ import Tutorials from '@/views/Tutorials.vue'
 import Tutorial from '@/views/Tutorial.vue'
 import Contact from '@/views/Contact.vue'
 
-const routes = [
+const routes: Array<RouteRecordRaw> = [
   { path: '/', component: Home },
   { path: '/sobre', component: About },
   { path: '/experiencia', component: Experience },

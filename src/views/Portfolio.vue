@@ -33,7 +33,7 @@
     </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useStore } from 'vuex';
 
@@ -55,7 +55,7 @@ const filteredProjects = computed(() => {
         return projects.value;
     }
     return projects.value.filter(project => 
-        project.category.includes(activeFilter.value)
+        (project as any).category.includes(activeFilter.value)
     );
 });
 </script>

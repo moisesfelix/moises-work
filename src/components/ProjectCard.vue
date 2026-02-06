@@ -13,10 +13,21 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import { defineProps } from 'vue';
+
+interface Project {
+  id: number;
+  title: string;
+  description: string;
+  image: string;
+  link: string;
+  tags: string[];
+}
+
 defineProps({
     project: {
-        type: Object,
+        type: Object as () => Project,
         required: true
     }
 });
