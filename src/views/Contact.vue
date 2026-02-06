@@ -80,7 +80,11 @@ const form = ref({
 });
 
 const submitForm = () => {
-    showToast('Mensagem enviada com sucesso! Entrarei em contato em breve.');
+    showToast({
+        type: 'success',
+        title: 'Sucesso!',
+        message: 'Mensagem enviada com sucesso! Entrarei em contato em breve.'
+    });
     form.value = {
         name: '',
         email: '',

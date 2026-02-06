@@ -77,6 +77,27 @@
           "code": "// Integração com Gemini API\nasync function sendToGeminiAPI(message) {\n    const apiKey = 'SUA_CHAVE_API';\n    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;\n    \n    const response = await fetch(url, {\n        method: 'POST',\n        headers: {\n            'Content-Type': 'application/json',\n        },\n        body: JSON.stringify({\n            contents: [{\n                parts: [{\n                    text: message\n                }]\n            }]\n        })\n    });\n    \n    const data = await response.json();\n    return data.candidates[0].content.parts[0].text;\n}"
         }
       ]
+    },
+    {
+      "id": 3,
+      "title": "Engenharia de Software na Era da IA: Do Monolito ao Vite",
+      "slug": "engenharia-software-ia-monolito-vite",
+      "category": "Engenharia & IA",
+      "date": "05 Set 2024",
+      "readTime": "10 min",
+      "image": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+      "excerpt": "Como utilizei LLMs para prototipar este portfólio em um único arquivo HTML e depois apliquei engenharia de software para refatorar para uma arquitetura escalável com Vue e Vite.",
+      "content": "<h2>O Paradoxo da Página em Branco</h2><p>Muitos desenvolvedores gastam horas configurando ESLint, Prettier e Webpack antes mesmo de ter uma ideia validada. Neste projeto, inverti o processo.</p><h2>Fase 1: O Caos Criativo (Browser + Gemini)</h2><p>Comecei pedindo ao Gemini no navegador: <em>'Crie um portfólio moderno, dark mode, single file, com Vue CDN'</em>. Em segundos, eu tinha uma validação visual (UX/UI) pronta. Sem build tools, sem complexidade.</p><h2>Fase 2: A Ordem da Engenharia (VS Code + Assistente)</h2><p>Com o visual aprovado, trouxe o código para o VS Code. Aqui, a IA mudou de papel: de 'Designer Criativo' para 'Engenheiro Refatorador'. Pedi ao assistente para quebrar o monolito HTML em Single File Components (.vue), configurar o Vite e o Pinia.</p><blockquote>A IA não substitui a arquitetura, ela acelera a transição do protótipo para o produto final.</blockquote>",
+      "codeBlocks": [
+        {
+          "language": "html",
+          "code": "\n<!DOCTYPE html>\n<html>\n<script src=\"vue.global.js\"></script>\n<style> /* 500 linhas de CSS aqui */ </style>\n<script> /* Toda a lógica misturada aqui */ </script>\n<body>...</body>\n</html>"
+        },
+        {
+          "language": "javascript",
+          "code": "// O RESULTADO (Refatoração no VS Code)\n// src/main.js\nimport { createApp } from 'vue'\nimport { createPinia } from 'pinia'\nimport App from './App.vue'\nimport router from './router'\n\nconst app = createApp(App)\napp.use(createPinia())\napp.use(router)\napp.mount('#app')"
+        }
+      ]
     }
   ],
   "tutorials": [
@@ -101,61 +122,272 @@
           "code": "<template>\n  <div class=\"greeting\">\n    <h1>{{ message }}</h1>\n    <p>Contador: {{ count }}</p>\n    <button @click=\"increment\">Incrementar</button>\n  </div>\n</template>\n\n<script>\nexport default {\n  name: 'GreetingComponent',\n  data() {\n    return {\n      message: 'Olá, Vue.js!',\n      count: 0\n    }\n  },\n  methods: {\n    increment() {\n      this.count++\n    }\n  }\n}\n</script>"
         }
       ]
+    },
+    {
+      "id": 2,
+      "title": "Workflow Ágil com Gemini: Prototipagem e Refatoração",
+      "slug": "workflow-agil-gemini-vue",
+      "category": "Workflow IA",
+      "difficulty": "Intermediário",
+      "duration": "60 min",
+      "image": "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+      "excerpt": "Tutorial passo-a-passo de como criei este site: do prompt inicial no navegador até a estrutura final no VS Code.",
+      "steps": [
+        {
+          "title": "Passo 1: Prototipagem no Navegador",
+          "content": "Use o Gemini (versão web) para gerar o conceito visual completo em um único arquivo. Isso valida a ideia instantaneamente.",
+          "code": "// Exemplo de Prompt para o Gemini Web:\n\"Crie um portfólio para um desenvolvedor FullStack.\nUse Vue.js via CDN (sem build steps).\nEstilo: Dark mode, glassmorphism, cores azul e roxo.\nInclua: Hero section, skills com barras de progresso e um blog.\nMe dê tudo em um único arquivo HTML funcional.\""
+        },
+        {
+          "title": "Passo 2: Setup do Projeto Real",
+          "content": "Com o HTML validado, crie a estrutura profissional usando Vite.",
+          "code": "# No seu terminal:\nnpm create vite@latest portfolio-moises -- --template vue\n\n# Instale as dependências\ncd portfolio-moises\nnpm install\nnpm install vue-router pinia sass"
+        },
+        {
+          "title": "Passo 3: Refatoração com Gemini no VS Code",
+          "content": "Abra o projeto no VS Code. Copie partes do seu arquivo HTML monolítico e peça para o Assistente transformar em componentes.",
+          "code": "// Prompt para o Assistente no VS Code:\n\"Aqui está o HTML da seção 'Hero' do meu protótipo:\n[Colar código HTML da Hero]\n\nCrie um componente Vue chamado 'HeroSection.vue' na pasta components.\nExtraia o CSS relevante para a tag <style scoped>.\nUse a Composition API.\""
+        },
+        {
+          "title": "Passo 4: Centralização de Dados",
+          "content": "Ao invés de deixar os dados hardcoded nos componentes, mova-os para um JSON ou Store (Pinia), simulando uma API real.",
+          "code": "// src/stores/portfolio.js\nimport { defineStore } from 'pinia'\nimport db from '../db.json'\n\nexport const usePortfolioStore = defineStore('portfolio', {\n  state: () => ({\n    projects: db.projects,\n    articles: db.articles\n  })\n})"
+        }
+      ]
     }
   ],
   "skills": {
-  "frontend": [     {
-        "name": "React.js",
-        "percent": 90
-      },     {
-        "name": "Vue.js",
-        "percent": 85
-      },     {
-        "name": "TypeScript",
-        "percent": 80
-      },     {
-        "name": "Next.js",
-        "percent": 75
-      }
-    ],   "backend": [     {
-        "name": "Node.js",
-        "percent": 88
-      },     {
-        "name": "Nest.js",
-        "percent": 82
-      },     {
-        "name": "PostgreSQL",
-        "percent": 78
-      },     {
-        "name": "REST/GraphQL",
-        "percent": 85
-      }
-    ],   "ai_devops": [     {
-        "name": "TensorFlow.js",
-        "percent": 70
-      },     {
-        "name": "Docker",
-        "percent": 75
-      },     {
-        "name": "Git/GitLab",
-        "percent": 90
-      },     {
-        "name": "APIs de IA",
-        "percent": 80
-      }
+    "frontend": [
+      { "name": "React.js", "percent": 90 },
+      { "name": "Vue.js", "percent": 85 },
+      { "name": "TypeScript", "percent": 80 },
+      { "name": "Next.js", "percent": 75 }
+    ],
+    "backend": [
+      { "name": "Node.js", "percent": 88 },
+      { "name": "Nest.js", "percent": 82 },
+      { "name": "PostgreSQL", "percent": 78 },
+      { "name": "REST/GraphQL", "percent": 85 }
+    ],
+    "ai_devops": [
+      { "name": "TensorFlow.js", "percent": 70 },
+      { "name": "Docker", "percent": 75 },
+      { "name": "Git/GitLab", "percent": 90 },
+      { "name": "APIs de IA", "percent": 80 }
     ]
-  }, "experiences": [   {     "id": 1,     "date": "MARÇO 2024 - SETEMBRO 2024",     "title": "Desenvolvedor FullStack",     "company": "Dona Sol Ajuda, RJ",     "description": "Desenvolvimento de plataforma web para conexão entre voluntários e pessoas necessitadas.",     "tags": [
-        "Vue.js",
-        "JavaScript",
-        "SASS",
-        "Redux"
+  },
+  "experiences": [
+    {
+      "id": 1,
+      "date": "MARÇO 2024 - SETEMBRO 2024",
+      "title": "Desenvolvedor FullStack",
+      "company": "Dona Sol Ajuda, RJ",
+      "description": "Desenvolvimento de plataforma web para conexão entre voluntários e pessoas necessitadas.",
+      "tags": ["Vue.js", "JavaScript", "SASS", "Redux"]
+    },
+    {
+      "id": 2,
+      "date": "JUNHO 2023 - FEVEREIRO 2024",
+      "title": "Analista de Sistemas Pleno",
+      "company": "Pvax, RJ",
+      "description": "Desenvolvimento de sistema interno com React, Next.js e Node.js.",
+      "tags": ["React", "Next.js", "TypeScript", "WebSocket"]
+    }
+  ]
+,
+  "projects": [
+    {
+      "id": 1,
+      "title": "Delícias da Dany e Sol",
+      "category": "web,fullstack",
+      "image": "https://images.unsplash.com/photo-1551650975-87deedd944c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+      "description": "E-commerce completo desenvolvido com Node.js, Firebase e sistema de pagamentos integrado.",
+      "tags": [
+        "Node.js",
+        "Firebase",
+        "JavaScript"
+      ],
+      "demoUrl": "#",
+      "githubUrl": "#"
+    },
+    {
+      "id": 2,
+      "title": "App de Gestão OneBlue",
+      "category": "mobile,ai",
+      "image": "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+      "description": "Aplicativo iOS para gestão de projetos com integração de IA para recomendações inteligentes.",
+      "tags": [
+        "Swift",
+        "SwiftUI",
+        "Core ML"
+      ],
+      "demoUrl": "#",
+      "githubUrl": "#"
+    },
+    {
+      "id": 3,
+      "title": "Sistema de Recomendação com IA",
+      "category": "ai,web",
+      "image": "https://images.unsplash.com/photo-1555949963-aa79dcee981c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+      "description": "Sistema de recomendação desenvolvido com TensorFlow.js e integração com API Gemini.",
+      "tags": [
+        "TensorFlow.js",
+        "Gemini API",
+        "Machine Learning"
+      ],
+      "demoUrl": "#",
+      "githubUrl": "#"
+    }
+  ],
+  "articles": [
+    {
+      "id": 1,
+      "title": "Introdução ao Pensamento Computacional",
+      "slug": "introducao-pensamento-computacional",
+      "category": "Educação",
+      "date": "15 Ago 2024",
+      "readTime": "8 min",
+      "image": "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+      "excerpt": "Como aplicar os 4 pilares do pensamento computacional no desenvolvimento de software e resolução de problemas do dia a dia.",
+      "content": "<h2>O que é Pensamento Computacional?</h2><p>O pensamento computacional é uma abordagem para resolução de problemas que utiliza conceitos fundamentais da ciência da computação.</p><p>Os 4 pilares são: Decomposição, Reconhecimento de Padrões, Abstração e Algoritmos.</p>",
+      "codeBlocks": [
+        {
+          "language": "javascript",
+          "code": "// Exemplo de decomposição de um problema\nfunction processUserData(users) {\n    // 1. Filtrar usuários ativos\n    const activeUsers = users.filter(user => user.active);\n    \n    // 2. Calcular média de idade\n    const averageAge = activeUsers.reduce((sum, user) => sum + user.age, 0) / activeUsers.length;\n    \n    // 3. Agrupar por cidade\n    const usersByCity = activeUsers.reduce((groups, user) => {\n        const city = user.city;\n        if (!groups[city]) groups[city] = [];\n        groups[city].push(user);\n        return groups;\n    }, {});\n    \n    return { activeUsers, averageAge, usersByCity };\n}"
+        }
       ]
-    },   {     "id": 2,     "date": "JUNHO 2023 - FEVEREIRO 2024",     "title": "Analista de Sistemas Pleno",     "company": "Pvax, RJ",     "description": "Desenvolvimento de sistema interno com React, Next.js e Node.js.",     "tags": [
-        "React",
-        "Next.js",
-        "TypeScript",
-        "WebSocket"
+    },
+    {
+      "id": 2,
+      "title": "Integrando APIs de IA no Desenvolvimento Web",
+      "slug": "integrando-apis-ia-desenvolvimento-web",
+      "category": "Tecnologia",
+      "date": "10 Jul 2024",
+      "readTime": "12 min",
+      "image": "https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+      "excerpt": "Guia prático para utilizar APIs como Gemini, ChatGPT e Claude AI para adicionar funcionalidades inteligentes às suas aplicações.",
+      "content": "<h2>O Poder das APIs de IA</h2><p>As APIs de IA revolucionaram o desenvolvimento web, permitindo adicionar funcionalidades inteligentes com poucas linhas de código.</p>",
+      "codeBlocks": [
+        {
+          "language": "javascript",
+          "code": "// Integração com Gemini API\nasync function sendToGeminiAPI(message) {\n    const apiKey = 'SUA_CHAVE_API';\n    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;\n    \n    const response = await fetch(url, {\n        method: 'POST',\n        headers: {\n            'Content-Type': 'application/json',\n        },\n        body: JSON.stringify({\n            contents: [{\n                parts: [{\n                    text: message\n                }]\n            }]\n        })\n    });\n    \n    const data = await response.json();\n    return data.candidates[0].content.parts[0].text;\n}"
+        }
       ]
+    },
+    {
+      "id": 3,
+      "title": "Engenharia de Software na Era da IA: Do Monolito ao Vite",
+      "slug": "engenharia-software-ia-monolito-vite",
+      "category": "Engenharia & IA",
+      "date": "05 Set 2024",
+      "readTime": "10 min",
+      "image": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+      "excerpt": "Como utilizei LLMs para prototipar este portfólio em um único arquivo HTML e depois apliquei engenharia de software para refatorar para uma arquitetura escalável com Vue e Vite.",
+      "content": "<h2>O Paradoxo da Página em Branco</h2><p>Muitos desenvolvedores gastam horas configurando ESLint, Prettier e Webpack antes mesmo de ter uma ideia validada. Neste projeto, inverti o processo.</p><h2>Fase 1: O Caos Criativo (Browser + Gemini)</h2><p>Comecei pedindo ao Gemini no navegador: <em>'Crie um portfólio moderno, dark mode, single file, com Vue CDN'</em>. Em segundos, eu tinha uma validação visual (UX/UI) pronta. Sem build tools, sem complexidade.</p><h2>Fase 2: A Ordem da Engenharia (VS Code + Assistente)</h2><p>Com o visual aprovado, trouxe o código para o VS Code. Aqui, a IA mudou de papel: de 'Designer Criativo' para 'Engenheiro Refatorador'. Pedi ao assistente para quebrar o monolito HTML em Single File Components (.vue), configurar o Vite e o Pinia.</p><blockquote>A IA não substitui a arquitetura, ela acelera a transição do protótipo para o produto final.</blockquote>",
+      "codeBlocks": [
+        {
+          "language": "html",
+          "code": "\n<!DOCTYPE html>\n<html>\n<script src=\"vue.global.js\"></script>\n<style> /* 500 linhas de CSS aqui */ </style>\n<script> /* Toda a lógica misturada aqui */ </script>\n<body>...</body>\n</html>"
+        },
+        {
+          "language": "javascript",
+          "code": "// O RESULTADO (Refatoração no VS Code)\n// src/main.js\nimport { createApp } from 'vue'\nimport { createPinia } from 'pinia'\nimport App from './App.vue'\nimport router from './router'\n\nconst app = createApp(App)\napp.use(createPinia())\napp.use(router)\napp.mount('#app')"
+        }
+      ]
+    }
+  ],
+  "tutorials": [
+    {
+      "id": 1,
+      "title": "Criando sua Primeira Aplicação Vue.js",
+      "slug": "criando-primeira-aplicacao-vuejs",
+      "category": "Frontend",
+      "difficulty": "Iniciante",
+      "duration": "45 min",
+      "image": "https://images.unsplash.com/photo-1629654291660-3c98113a0438?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+      "excerpt": "Aprenda a criar uma aplicação Vue.js do zero com Vue Router e Vuex.",
+      "steps": [
+        {
+          "title": "Configuração do Ambiente",
+          "content": "Primeiro, instale o Vue CLI e crie um novo projeto.",
+          "code": "# Instalação do Vue CLI\nnpm install -g @vue/cli\n\n# Criação de um novo projeto\nvue create meu-projeto-vue\n\n# Escolha Vue 3, Vue Router e Vuex\n\n# Navegue para o diretório\ncd meu-projeto-vue\n\n# Execute o servidor\nnpm run serve"
+        },
+        {
+          "title": "Criando seu Primeiro Componente",
+          "content": "Crie um componente simples de saudação.",
+          "code": "<template>\n  <div class=\"greeting\">\n    <h1>{{ message }}</h1>\n    <p>Contador: {{ count }}</p>\n    <button @click=\"increment\">Incrementar</button>\n  </div>\n</template>\n\n<script>\nexport default {\n  name: 'GreetingComponent',\n  data() {\n    return {\n      message: 'Olá, Vue.js!',\n      count: 0\n    }\n  },\n  methods: {\n    increment() {\n      this.count++\n    }\n  }\n}\n</script>"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Workflow Ágil com Gemini: Prototipagem e Refatoração",
+      "slug": "workflow-agil-gemini-vue",
+      "category": "Workflow IA",
+      "difficulty": "Intermediário",
+      "duration": "60 min",
+      "image": "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80",
+      "excerpt": "Tutorial passo-a-passo de como criei este site: do prompt inicial no navegador até a estrutura final no VS Code.",
+      "steps": [
+        {
+          "title": "Passo 1: Prototipagem no Navegador",
+          "content": "Use o Gemini (versão web) para gerar o conceito visual completo em um único arquivo. Isso valida a ideia instantaneamente.",
+          "code": "// Exemplo de Prompt para o Gemini Web:\n\"Crie um portfólio para um desenvolvedor FullStack.\nUse Vue.js via CDN (sem build steps).\nEstilo: Dark mode, glassmorphism, cores azul e roxo.\nInclua: Hero section, skills com barras de progresso e um blog.\nMe dê tudo em um único arquivo HTML funcional.\""
+        },
+        {
+          "title": "Passo 2: Setup do Projeto Real",
+          "content": "Com o HTML validado, crie a estrutura profissional usando Vite.",
+          "code": "# No seu terminal:\nnpm create vite@latest portfolio-moises -- --template vue\n\n# Instale as dependências\ncd portfolio-moises\nnpm install\nnpm install vue-router pinia sass"
+        },
+        {
+          "title": "Passo 3: Refatoração com Gemini no VS Code",
+          "content": "Abra o projeto no VS Code. Copie partes do seu arquivo HTML monolítico e peça para o Assistente transformar em componentes.",
+          "code": "// Prompt para o Assistente no VS Code:\n\"Aqui está o HTML da seção 'Hero' do meu protótipo:\n[Colar código HTML da Hero]\n\nCrie um componente Vue chamado 'HeroSection.vue' na pasta components.\nExtraia o CSS relevante para a tag <style scoped>.\nUse a Composition API.\""
+        },
+        {
+          "title": "Passo 4: Centralização de Dados",
+          "content": "Ao invés de deixar os dados hardcoded nos componentes, mova-os para um JSON ou Store (Pinia), simulando uma API real.",
+          "code": "// src/stores/portfolio.js\nimport { defineStore } from 'pinia'\nimport db from '../db.json'\n\nexport const usePortfolioStore = defineStore('portfolio', {\n  state: () => ({\n    projects: db.projects,\n    articles: db.articles\n  })\n})"
+        }
+      ]
+    }
+  ],
+  "skills": {
+    "frontend": [
+      { "name": "React.js", "percent": 90 },
+      { "name": "Vue.js", "percent": 85 },
+      { "name": "TypeScript", "percent": 80 },
+      { "name": "Next.js", "percent": 75 }
+    ],
+    "backend": [
+      { "name": "Node.js", "percent": 88 },
+      { "name": "Nest.js", "percent": 82 },
+      { "name": "PostgreSQL", "percent": 78 },
+      { "name": "REST/GraphQL", "percent": 85 }
+    ],
+    "ai_devops": [
+      { "name": "TensorFlow.js", "percent": 70 },
+      { "name": "Docker", "percent": 75 },
+      { "name": "Git/GitLab", "percent": 90 },
+      { "name": "APIs de IA", "percent": 80 }
+    ]
+  },
+  "experiences": [
+    {
+      "id": 1,
+      "date": "MARÇO 2024 - SETEMBRO 2024",
+      "title": "Desenvolvedor FullStack",
+      "company": "Dona Sol Ajuda, RJ",
+      "description": "Desenvolvimento de plataforma web para conexão entre voluntários e pessoas necessitadas.",
+      "tags": ["Vue.js", "JavaScript", "SASS", "Redux"]
+    },
+    {
+      "id": 2,
+      "date": "JUNHO 2023 - FEVEREIRO 2024",
+      "title": "Analista de Sistemas Pleno",
+      "company": "Pvax, RJ",
+      "description": "Desenvolvimento de sistema interno com React, Next.js e Node.js.",
+      "tags": ["React", "Next.js", "TypeScript", "WebSocket"]
     }
   ]
 }

@@ -50,13 +50,14 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, inject } from 'vue';
 import { useStore } from 'vuex';
 import { useRoute } from 'vue-router';
 import hljs from 'highlight.js';
 
 const store = useStore();
 const route = useRoute();
+const showToast = inject('showToast');
 
 const copiedStepIndex = ref(null);
 
@@ -66,14 +67,22 @@ const copyCode = async (code, index) => {
     try {
         await navigator.clipboard.writeText(code);
         copiedStepIndex.value = index;
-        // You might want to use a toast notification here
-        console.log('Código copiado para a área de transferência!');
+        showToast({
+            type: 'success',
+            title: 'Copiado!',
+            message: 'Código copiado para a área de transferência!'
+        });
         
         setTimeout(() => {
             copiedStepIndex.value = null;
         }, 2000);
     } catch (err) {
         console.error('Erro ao copiar:', err);
+        showToast({
+            type: 'error',
+            title: 'Erro!',
+            message: 'Erro ao copiar o código.'
+        });
     }
 };
 
