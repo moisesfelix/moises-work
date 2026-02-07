@@ -1,24 +1,17 @@
 {
-  "name": "portfolio-moises-felix",
-  "type": "module",
+  "name": "portfolio-monorepo",
   "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "vue": "^3.3.4",
-    "vue-router": "^4.2.4",
-    "vuex": "^4.1.0",
-    "highlight.js": "^11.8.0"
+    "dev": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
+    "serve": "npm run serve --workspace=frontend",
+    "deploy": "firebase deploy --only hosting,functions"
   },
   "devDependencies": {
-    "@types/node": "^25.2.1",
-    "@vitejs/plugin-vue": "^4.2.3",
-    "@vue/tsconfig": "^0.8.1",
-    "sass": "^1.66.1",
-    "typescript": "^5.9.3",
-    "vite": "^4.4.5"
+    "firebase-tools": "^13.0.0"
   }
 }
