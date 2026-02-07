@@ -1,13 +1,14 @@
 # Deps
 /node_modules
-/.pnp
-.pnp.js
+/packages/frontend/node_modules
+/packages/functions/node_modules
 
 # VScode
 .vscode/
 
 # Build
-/dist
+/packages/frontend/dist
+/packages/functions/dist
 
 # Log
 npm-debug.log*
