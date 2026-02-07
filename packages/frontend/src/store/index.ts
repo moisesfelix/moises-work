@@ -62,3 +62,6 @@ const store: Store<State> = createStore({
     }
   }
 });
+
+export default store;
+

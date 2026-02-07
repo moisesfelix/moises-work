@@ -20,3 +20,7 @@ yarn-error.log*
 
 # Output
 output.txt
+
+# Environment variables
+.env
+.env
