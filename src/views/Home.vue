@@ -30,7 +30,7 @@
               
               <div class="hero-image">
                   <div class="image-wrapper">
-                      <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=774&q=80" alt="Moisés Felix">
+                      <img src="https://media.licdn.com/dms/image/v2/D4D03AQFq7OqKaCPTkQ/profile-displayphoto-scale_400_400/B4DZwbgAV5J0Ag-/0/1769987904145?e=1772064000&v=beta&t=J-IL4IkEeiYzI7qeo6buqKaj0sM-k1kB0AVlpFo26zY" alt="Moisés Felix">
                   </div>
               </div>
           </div>
