@@ -3,19 +3,18 @@ import type { Project, Article, Tutorial, Skill, Experience } from 'shared';
 import { db } from '@/firebase/config';
 import { ref, get } from 'firebase/database';
 
-// Tipagem do Estado
 interface State {
   isLoading: boolean;
   projects: Project[];
   articles: Article[];
   tutorials: Tutorial[];
-  skills: any; // Ajuste conforme a estrutura no Firebase
+  skills: any;
   experiences: Experience[];
 }
 
 const store: Store<State> = createStore({
   state: {
-    isLoading: true, // Inicia como 'carregando'
+    isLoading: true,
     projects: [],
     articles: [],
     tutorials: [],
@@ -24,32 +23,29 @@ const store: Store<State> = createStore({
   },
   
   mutations: {
-    // Mutation para preencher o estado com os dados do Firebase
     setPortfolioData(state, payload) {
       state.projects = payload.projects || [];
       state.articles = payload.articles || [];
       state.tutorials = payload.tutorials || [];
       state.skills = payload.skills || {};
       state.experiences = payload.experiences || [];
-      state.isLoading = false; // Finaliza o carregamento
+      state.isLoading = false;
     }
   },
 
   actions: {
-    // Action para buscar os dados do Realtime Database
     async fetchPortfolioData({ commit }) {
       try {
-        const dbRef = ref(db, '/'); // Referência para a raiz do seu DB
+        const dbRef = ref(db, '/');
         const snapshot = await get(dbRef);
         if (snapshot.exists()) {
           commit('setPortfolioData', snapshot.val());
         } else {
           console.log("No data available");
-          commit('setPortfolioData', {}); // Limpa os dados se não houver nada
+          commit('setPortfolioData', {});
         }
       } catch (error) {
         console.error("Firebase fetch error:", error);
-        // Opcional: Adicionar uma mutation para estado de erro
       }
     }
   },
@@ -66,6 +62,3 @@ const store: Store<State> = createStore({
     }
   }
 });
-
-export default store;
-
