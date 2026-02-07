@@ -1,5 +1,7 @@
 {
   "projects": {
     "default": "moises-work"
-  }
+  },
+  "targets": {},
+  "etags": {}
 }

@@ -8,6 +8,9 @@
   "scripts": {
     "dev": "npm run dev --workspace=frontend",
     "build": "npm run build --workspace=frontend",
+    "dev:admin": "npm run dev --workspace=admin",
+    "build:admin": "npm run build --workspace=admin",
+    "dev:all": "npm run dev --workspace=frontend & npm run dev --workspace=admin",
     "serve": "npm run serve --workspace=frontend",
     "deploy": "firebase deploy --only hosting,functions"
   },
