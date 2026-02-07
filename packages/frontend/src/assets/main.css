@@ -7,9 +7,6 @@
     --light: #f1f5f9;
     --gray: #94a3b8;
     --gray-light: #cbd5e1;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
     --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
     --radius: 0.5rem;
     --transition: all 0.3s ease-in-out;
@@ -157,6 +154,7 @@ section {
     color: white;
 }
 
+/* --- Refatoração do Header (Mobile-First) --- */
 header {
     position: fixed;
     top: 0;
@@ -179,96 +177,120 @@ header {
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--light);
+    z-index: 1001; /* Garante que o logo fique acima do menu mobile */
 }
 
 .logo span {
     color: var(--primary);
 }
 
-nav ul {
+/* Estilos base para a navegação (Mobile) */
+.main-nav {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.98);
     display: flex;
-    list-style: none;
-    gap: 1.5rem;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
 }
 
-nav a {
+.main-nav.active {
+    transform: translateX(0);
+}
+
+.main-nav ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    gap: 2rem;
+}
+
+.main-nav a {
     color: var(--gray-light);
     font-weight: 500;
+    font-size: 1.5rem;
     position: relative;
     padding: 0.5rem 0;
 }
 
-nav a.router-link-active {
+.main-nav a.router-link-active {
     color: var(--primary);
 }
 
-nav a::after {
-    content: '';
-    position: absolute;
-    width: 0;
-    height: 2px;
-    background: var(--primary);
-    left: 0;
-    bottom: 0;
-    transition: width 0.3s ease;
-}
-
-nav a:hover::after,
-nav a.router-link-active::after {
-    width: 100%;
-}
-
 .mobile-menu-btn {
-    display: none;
+    display: block;
+    background: none;
+    border: none;
+    color: var(--light);
+    font-size: 1.5rem;
+    cursor: pointer;
     z-index: 1001;
 }
 
-@media (max-width: 768px) {
-    nav {
-        position: fixed;
-        inset: 0;
-        background: rgba(15, 23, 42, 0.98);
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        display: flex;
-        transform: translateX(100%);
-        transition: transform 0.3s ease-in-out;
-    }
-
-    nav.active {
-        transform: translateX(0);
-    }
-
-    nav ul {
-        flex-direction: column;
-        text-align: center;
-        gap: 2rem;
-    }
-
-    nav a {
-        font-size: 1.5rem;
-    }
-
+/* Estilos para telas maiores (Desktop) */
+@media (min-width: 768px) {
     .mobile-menu-btn {
-        display: block;
+        display: none;
+    }
+
+    .main-nav {
+        position: static;
+        transform: none;
         background: none;
-        border: none;
-        color: var(--light);
-        font-size: 1.5rem;
-        cursor: pointer;
+        flex-direction: row;
+        width: auto;
+    }
+
+    .main-nav ul {
+        flex-direction: row;
+        gap: 1.5rem;
+    }
+
+    .main-nav a {
+        font-size: 1rem;
+    }
+
+    .main-nav a::after {
+        content: '';
+        position: absolute;
+        width: 0;
+        height: 2px;
+        background: var(--primary);
+        left: 0;
+        bottom: 0;
+        transition: width 0.3s ease;
+    }
+
+    .main-nav a:hover::after,
+    .main-nav a.router-link-active::after {
+        width: 100%;
     }
 }
 
+
+/* --- Refatoração da Hero Section (Mobile-First) --- */
 .hero {
     padding-top: 10rem;
-    text-align: center;
 }
 
 .hero-content {
-    display: grid;
-    gap: 2rem;
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    text-align: center;
+    gap: 2rem;
+}
+
+.hero-text {
+    order: 2; /* Texto aparece depois da imagem no mobile */
+}
+
+.hero-image {
+    order: 1; /* Imagem aparece primeiro no mobile */
 }
 
 .hero-image .image-wrapper {
@@ -299,28 +321,34 @@ nav a.router-link-active::after {
     margin-top: 1.5rem;
 }
 
-.portfolio-grid, .blog-grid {
-    display: grid;
-    gap: 1.5rem;
-}
-
-@media (min-width: 640px) {
-    .portfolio-grid, .blog-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
+/* Layout da Hero para telas maiores */
+@media (min-width: 768px) {
     .hero-content {
-        grid-template-columns: 2fr 1fr;
+        flex-direction: row;
         text-align: left;
     }
+
+    .hero-text {
+        order: 1; /* Texto volta para a primeira posição */
+    }
+
+    .hero-image {
+        order: 2; /* Imagem vai para a segunda posição */
+    }
+
     .social-links {
         justify-content: flex-start;
     }
 }
 
-@media (min-width: 1024px) {
-    .portfolio-grid, .blog-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
+
+/* --- Grids Fluídos e Inteligentes --- */
+.portfolio-grid, .blog-grid {
+    display: grid;
+    gap: 1.5rem;
+    /* Mágica acontece aqui: cria colunas de no mínimo 300px 
+       e as ajusta automaticamente ao espaço disponível */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
 .portfolio-item, .blog-item {
@@ -341,7 +369,6 @@ nav a.router-link-active::after {
 
 .portfolio-img {
     height: 200px;
-    position: relative;
     overflow: hidden;
 }
 
@@ -385,11 +412,12 @@ nav a.router-link-active::after {
     position: relative;
     max-width: 800px;
     margin: 0 auto;
+    padding-left: 20px; 
 }
 
 .timeline-item {
     position: relative;
-    padding-left: 40px;
+    padding-left: 20px;
     margin-bottom: 40px;
     border-left: 2px solid var(--dark-light);
 }
@@ -417,16 +445,11 @@ nav a.router-link-active::after {
     display: block;
 }
 
+/* Skills Section com grid fluído */
 .skills-container {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 30px;
-}
-
-@media (min-width: 768px) {
-    .skills-container {
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    }
+    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
 .skill-category {
