@@ -1,5 +1,6 @@
 # Deps
 /node_modules
+/packages/admin/node_modules
 /packages/frontend/node_modules
 /packages/functions/node_modules
 
