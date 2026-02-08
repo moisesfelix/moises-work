@@ -328,46 +328,5 @@ export default createStore<State>({
         commit('setLoading', false);
       }
     },
-
-    async saveSkill({ dispatch, state, commit }, { name, value, oldName }) {
-      commit('setLoading', true);
-      commit('setError', null);
-
-      try {
-        const skillsRef = ref(db, 'skills');
-        let updatedSkills = { ...state.skills };
-
-        if (oldName && oldName !== name) {
-          delete updatedSkills[oldName];
-        }
-
-        updatedSkills[name] = value;
-        await set(skillsRef, updatedSkills);
-        await dispatch('fetchAllData');
-      } catch (error: any) {
-        commit('setError', error.message);
-        throw error;
-      } finally {
-        commit('setLoading', false);
-      }
-    },
-
-    async deleteSkill({ dispatch, state, commit }, name) {
-      commit('setLoading', true);
-      commit('setError', null);
-
-      try {
-        const skillsRef = ref(db, 'skills');
-        let updatedSkills = { ...state.skills };
-        delete updatedSkills[name];
-        await set(skillsRef, updatedSkills);
-        await dispatch('fetchAllData');
-      } catch (error: any) {
-        commit('setError', error.message);
-        throw error;
-      } finally {
-        commit('setLoading', false);
-      }
-    },
   },
 });
