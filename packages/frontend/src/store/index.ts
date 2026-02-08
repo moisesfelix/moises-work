@@ -24,6 +24,7 @@ interface State {
   experiences: Experience[];
   theme: ThemeState;
   about: AboutState | null;
+  contact: any;
 }
 
 const themeModule = {
@@ -58,7 +59,8 @@ const store: Store<State> = createStore({
     tutorials: [],
     skills: {},
     experiences: [],
-    about: null
+    about: null,
+    contact: null
   } as State,
   
   modules: {
@@ -73,6 +75,7 @@ const store: Store<State> = createStore({
       state.skills = payload.skills || {};
       state.experiences = payload.experiences || [];
       state.about = payload.about || null;
+      state.contact = payload.contact || null;
       state.isLoading = false;
     }
   },

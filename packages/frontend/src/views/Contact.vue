@@ -1,102 +1,147 @@
 <template>
-  <section class="contact" style="padding-top: 180px;">
-      <div class="container">
-          <h2>Entre em Contato</h2>
-          
-          <div class="contact-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 40px;">
-              <div class="contact-info">
-                  <h3>Vamos Conversar!</h3>
-                  <p>Estou sempre aberto a discutir novas oportunidades, projetos desafiadores ou colaborações.</p>
-                  
-                  <div class="contact-info-item" style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
-                      <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                          <i class="fas fa-map-marker-alt" style="color: white; font-size: 1.5rem;"></i>
-                      </div>
-                      <div>
-                          <h4>Localização</h4>
-                          <p>Olaria, Rio de Janeiro, RJ</p>
-                      </div>
-                  </div>
-                  
-                  <div class="contact-info-item" style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
-                      <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                          <i class="fas fa-phone-alt" style="color: white; font-size: 1.5rem;"></i>
-                      </div>
-                      <div>
-                          <h4>Telefone</h4>
-                          <p>+55 (21) 98189-1199</p>
-                      </div>
-                  </div>
-                  
-                  <div class="contact-info-item" style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
-                      <div style="width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                          <i class="fas fa-envelope" style="color: white; font-size: 1.5rem;"></i>
-                      </div>
-                      <div>
-                          <h4>Email</h4>
-                          <p>contato@moisesfelix.com</p>
-                      </div>
-                  </div>
-              </div>
-              
-              <div class="contact-form">
-                  <form @submit.prevent="submitForm">
-                      <div class="form-group">
-                          <input type="text" class="form-control" v-model="form.name" placeholder="Seu Nome" required style="width: 100%; padding: 15px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius); color: white; margin-bottom: 25px;">
-                      </div>
-                      
-                      <div class="form-group">
-                          <input type="email" class="form-control" v-model="form.email" placeholder="Seu Email" required style="width: 100%; padding: 15px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius); color: white; margin-bottom: 25px;">
-                      </div>
-                      
-                      <div class="form-group">
-                          <input type="text" class="form-control" v-model="form.subject" placeholder="Assunto" required style="width: 100%; padding: 15px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius); color: white; margin-bottom: 25px;">
-                      </div>
-                      
-                      <div class="form-group">
-                          <textarea class="form-control" rows="6" v-model="form.message" placeholder="Sua Mensagem" required style="width: 100%; padding: 15px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: var(--radius); color: white; margin-bottom: 25px;"></textarea>
-                      </div>
-                      
-                      <button type="submit" class="btn" style="width: 100%;">
-                          <i class="fas fa-paper-plane"></i> Enviar Mensagem
-                      </button>
-                  </form>
-              </div>
-          </div>
+  <div class="contact-page">
+    <div class="container">
+      <h1>Contato</h1>
+      <p class="subtitle">Entre em contato comigo através dos canais abaixo.</p>
+
+      <div v-if="loading" class="loading-state">
+        <p>Carregando informações de contato...</p>
       </div>
-  </section>
+
+      <div v-else-if="contactInfo" class="contact-methods">
+        <div class="contact-card" v-if="contactInfo.email">
+          <a :href="'mailto:' + contactInfo.email" target="_blank">
+            <i class="icon-email"></i>
+            <h2>Email</h2>
+            <p>{{ contactInfo.email }}</p>
+          </a>
+        </div>
+
+        <div class="contact-card" v-if="contactInfo.whatsapp">
+          <a :href="contactInfo.whatsapp" target="_blank">
+            <i class="icon-whatsapp"></i>
+            <h2>WhatsApp</h2>
+            <p>{{ contactInfo.phone }}</p>
+          </a>
+        </div>
+
+        <div class="contact-card" v-if="contactInfo.phone">
+          <a :href="'tel:' + contactInfo.phone">
+            <i class="icon-phone"></i>
+            <h2>Telefone</h2>
+            <p>{{ contactInfo.phone }}</p>
+          </a>
+        </div>
+
+        <div class="contact-card" v-if="contactInfo.linkedin">
+          <a :href="contactInfo.linkedin" target="_blank">
+            <i class="icon-linkedin"></i>
+            <h2>LinkedIn</h2>
+            <p>{{ contactInfo.linkedin.replace('https://www.linkedin.com/in/', '') }}</p>
+          </a>
+        </div>
+
+        <div class="contact-card" v-if="contactInfo.github">
+          <a :href="contactInfo.github" target="_blank">
+            <i class="icon-github"></i>
+            <h2>GitHub</h2>
+            <p>{{ contactInfo.github.replace('https://github.com/', '') }}</p>
+          </a>
+        </div>
+      </div>
+      <div v-else class="empty-state">
+        <p>Nenhuma informação de contato disponível.</p>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, inject } from 'vue';
+import { computed, onMounted } from 'vue';
+import { useStore } from 'vuex';
 
-const showToast = inject('showToast') as (toast: { type: string; title: string; message: string; }) => void;
+const store = useStore();
+const loading = computed(() => store.state.loading);
+const contactInfo = computed(() => store.state.contact);
 
-interface Form {
-    name: string;
-    email: string;
-    subject: string;
-    message: string;
+onMounted(() => {
+  store.dispatch('fetchPortfolioData');
+});
+</script>
+
+<style scoped>
+.contact-page {
+  padding: 60px 20px;
+  background-color: var(--background-color-primary);
+  color: var(--text-primary-color);
+  text-align: center;
 }
 
-const form = ref<Form>({
-    name: '',
-    email: '',
-    subject: '',
-    message: ''
-});
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
 
-const submitForm = () => {
-    showToast({
-        type: 'success',
-        title: 'Sucesso!',
-        message: 'Mensagem enviada com sucesso! Entrarei em contato em breve.'
-    });
-    form.value = {
-        name: '',
-        email: '',
-        subject: '',
-        message: ''
-    };
-};
-</script>
+h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  font-size: 1.2rem;
+  color: var(--text-secondary-color);
+  margin-bottom: 40px;
+}
+
+.contact-methods {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+  text-align: left;
+}
+
+.contact-card {
+  background-color: var(--background-color-secondary);
+  border-radius: 10px;
+  padding: 30px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.contact-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.contact-card a {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.contact-card i {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  color: var(--accent-color);
+  display: block;
+}
+
+.contact-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.contact-card p {
+  font-size: 1rem;
+  color: var(--text-secondary-color);
+  word-break: break-all;
+}
+
+/* You would need to have an icon font setup for these to work */
+/* Example using pseudo-elements */
+.icon-email::before { content: '📧'; }
+.icon-whatsapp::before { content: '💬'; }
+.icon-phone::before { content: '📞'; }
+.icon-linkedin::before { content: '💼'; }
+.icon-github::before { content: '💻'; }
+</style>
