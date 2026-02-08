@@ -16,5 +16,9 @@
   },
   "devDependencies": {
     "firebase-tools": "^13.0.0"
+  },
+  "dependencies": {
+    "admin": "file:packages/admin",
+    "sass": "^1.97.3"
   }
 }
