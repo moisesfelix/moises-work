@@ -24,4 +24,4 @@ output.txt
 
 # Environment variables
 .env
-.env
+.env*.todo
