@@ -1,213 +1,279 @@
 <template>
-  <div>
-    <h1>Experiences</h1>
-    <p>Manage your experiences here.</p>
+  <div class="page-container">
+    <header class="page-header">
+      <div>
+        <h1 class="page-title">Experiências</h1>
+        <p class="page-subtitle">Gerencie suas experiências profissionais</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" @click="openAddExperienceDialog">
+          + Adicionar Experiência
+        </button>
+      </div>
+    </header>
 
-    <button @click="openAddExperienceDialog">Add Experience</button>
+    <div class="card">
+      <div v-if="loading" class="loading-state">
+        <div class="spinner-large"></div>
+        <p>Carregando experiências...</p>
+      </div>
 
-    <div v-if="experiences.length > 0">
-      <table>
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Company</th>
-            <th>Description</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="experience in experiences" :key="experience.id">
-            <td>{{ experience.title }}</td>
-            <td>{{ experience.company }}</td>
-            <td>{{ experience.description }}</td>
-            <td>
-              <button @click="openEditExperienceDialog(experience)">Edit</button>
-              <button @click="deleteExperience(experience)">Delete</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div v-else>
-      <p>No experiences available.</p>
-    </div>
+      <div v-else-if="experiences.length > 0" class="table-responsive">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th width="20%">Data</th>
+              <th width="25%">Título</th>
+              <th width="20%">Empresa</th>
+              <th width="25%">Descrição</th>
+              <th width="10%" class="text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="exp in experiences" :key="exp.id">
+              <td>{{ exp.date }}</td>
+              <td class="font-medium">{{ exp.title }}</td>
+              <td>{{ exp.company }}</td>
+              <td class="text-muted">{{ truncateText(exp.description, 60) }}</td>
+              <td class="actions-cell">
+                <button @click="openEditExperienceDialog(exp)" class="btn-icon edit" title="Editar">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                </button>
+                <button @click="handleDeleteExperience(exp)" class="btn-icon delete" title="Excluir">
+                  <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-    <!-- Add/Edit Experience Dialog -->
-    <div v-if="showExperienceDialog" class="dialog-overlay">
-      <div class="dialog">
-        <h2>{{ editingExperience ? 'Edit Experience' : 'Add Experience' }}</h2>
-        <label for="title">Title:</label>
-        <input type="text" id="title" v-model="experienceForm.title" />
-
-        <label for="company">Company:</label>
-        <input type="text" id="company" v-model="experienceForm.company" />
-
-        <label for="description">Description:</label>
-        <textarea id="description" v-model="experienceForm.description"></textarea>
-
-        <button @click="saveExperience">Save</button>
-        <button @click="closeExperienceDialog">Cancel</button>
+      <div v-else class="empty-state">
+        <p>Nenhuma experiência encontrada.</p>
+        <button @click="openAddExperienceDialog" class="btn btn-outline">Adicionar primeira experiência</button>
       </div>
     </div>
+
+    <transition name="fade">
+      <div v-if="showExperienceDialog" class="modal-overlay" @click.self="closeExperienceDialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>{{ editingExperience ? 'Editar Experiência' : 'Nova Experiência' }}</h2>
+            <button class="close-btn" @click="closeExperienceDialog">&times;</button>
+          </div>
+          
+          <form @submit.prevent="saveExperience" class="modal-body">
+            <div class="form-group">
+              <label for="date">Data</label>
+              <input type="text" id="date" v-model="experienceForm.date" required placeholder="Ex: 2020 - Presente" />
+            </div>
+
+            <div class="form-group">
+              <label for="title">Título</label>
+              <input type="text" id="title" v-model="experienceForm.title" required placeholder="Ex: Desenvolvedor Full-Stack" />
+            </div>
+            
+            <div class="form-group">
+              <label for="company">Empresa</label>
+              <input type="text" id="company" v-model="experienceForm.company" required placeholder="Ex: Google" />
+            </div>
+
+            <div class="form-group">
+              <label for="description">Descrição</label>
+              <textarea id="description" v-model="experienceForm.description" required rows="5"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="tags">Tags (separadas por vírgula)</label>
+              <input type="text" id="tags" v-model="tagsInput" placeholder="Ex: Vue.js, Node.js, Firebase" />
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" @click="closeExperienceDialog">Cancelar</button>
+              <button type="submit" class="btn btn-primary">Salvar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue';
+import { useStore } from 'vuex';
 import { v4 as uuidv4 } from 'uuid';
-import { mapState, mapActions } from 'vuex';
 
-export default {
-  name: 'Experiences',
-  data() {
-    return {
-      showExperienceDialog: false,
-      editingExperience: null,
-      experienceForm: {
-        id: null,
-        title: '',
-        company: '',
-        description: ''
-      }
-    };
-  },
-  computed: {
-    ...mapState(['experiences'])
-  },
-  mounted() {
-    this.fetchAllData();
-  },
-  methods: {
-    ...mapActions(['fetchAllData']),
-    openAddExperienceDialog() {
-      this.editingExperience = null;
-      this.experienceForm = {
-        id: null,
-        title: '',
-        company: '',
-        description: ''
-      };
-      this.showExperienceDialog = true;
-    },
-    openEditExperienceDialog(experience) {
-      this.editingExperience = experience;
-      this.experienceForm = { ...experience };
-      this.showExperienceDialog = true;
-    },
-    closeExperienceDialog() {
-      this.showExperienceDialog = false;
-      this.editingExperience = null;
-      this.experienceForm = {
-        id: null,
-        title: '',
-        company: '',
-        description: ''
-      };
-    },
-    async saveExperience() {
-      const experienceData = { ...this.experienceForm };
-      let updatedExperiences = [...this.experiences];
+const store = useStore();
+const experiences = computed(() => store.state.experiences || []);
+const loading = computed(() => store.state.loading);
 
-      if (this.editingExperience) {
-        const index = updatedExperiences.findIndex(e => e.id === experienceData.id);
-        if (index !== -1) {
-          updatedExperiences[index] = experienceData;
-        }
-      } else {
-        experienceData.id = uuidv4();
-        updatedExperiences.push(experienceData);
-      }
-      
-      await this.$store.dispatch('saveData', { type: 'experiences', data: updatedExperiences });
-      this.closeExperienceDialog();
-    },
-    async deleteExperience(experience) {
-      if (confirm('Are you sure you want to delete this experience?')) {
-        const updatedExperiences = this.experiences.filter(e => e.id !== experience.id);
-        await this.$store.dispatch('saveData', { type: 'experiences', data: updatedExperiences });
-      }
-    }
+const showExperienceDialog = ref(false);
+const editingExperience = ref<any>(null);
+const tagsInput = ref('');
+
+const experienceForm = ref({
+  id: null as string | null,
+  date: '',
+  title: '',
+  company: '',
+  description: '',
+  tags: [] as string[]
+});
+
+onMounted(() => {
+  store.dispatch('fetchAllData');
+});
+
+watch(editingExperience, (newVal) => {
+  if (newVal && newVal.tags) {
+    tagsInput.value = newVal.tags.join(', ');
+  } else {
+    tagsInput.value = '';
   }
+});
+
+const openAddExperienceDialog = () => {
+  editingExperience.value = null;
+  resetForm();
+  showExperienceDialog.value = true;
+};
+
+const openEditExperienceDialog = (exp: any) => {
+  editingExperience.value = exp;
+  experienceForm.value = { ...exp };
+  showExperienceDialog.value = true;
+};
+
+const closeExperienceDialog = () => {
+  showExperienceDialog.value = false;
+  editingExperience.value = null;
+  resetForm();
+};
+
+const resetForm = () => {
+  tagsInput.value = '';
+  experienceForm.value = {
+    id: null,
+    date: '',
+    title: '',
+    company: '',
+    description: '',
+    tags: []
+  };
+};
+
+const saveExperience = async () => {
+  let updatedExperiences = [...experiences.value];
+  experienceForm.value.tags = tagsInput.value.split(',').map(tag => tag.trim()).filter(tag => tag);
+  const formData = { ...experienceForm.value };
+
+  if (editingExperience.value) {
+    const index = updatedExperiences.findIndex(e => e.id === formData.id);
+    if (index !== -1) updatedExperiences[index] = formData;
+  } else {
+    formData.id = uuidv4();
+    updatedExperiences.push(formData);
+  }
+
+  await store.dispatch('saveData', { type: 'experiences', data: updatedExperiences });
+  closeExperienceDialog();
+};
+
+const handleDeleteExperience = async (exp: any) => {
+  if (confirm(`Excluir a experiência "${exp.title}"?`)) {
+    const updatedExperiences = experiences.value.filter((e: any) => e.id !== exp.id);
+    await store.dispatch('saveData', { type: 'experiences', data: updatedExperiences });
+  }
+};
+
+const truncateText = (text: string, length: number) => {
+  if (!text) return '';
+  return text.length > length ? text.substring(0, length) + '...' : text;
 };
 </script>
 
 <style scoped>
-.dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.dialog {
-  background-color: white;
+/* Estilos gerais reutilizados para consistência */
+.page-container {
   padding: 20px;
-  border-radius: 5px;
-  min-width: 400px;
-  max-width: 500px;
+  background-color: #f5f7fb;
+  min-height: 100vh;
+}
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+}
+.page-subtitle { color: #888; font-size: 14px; }
+.header-actions { display: flex; gap: 10px; }
+
+.card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  overflow: hidden;
 }
 
-label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-}
+.table-responsive { width: 100%; overflow-x: auto; }
+.custom-table { width: 100%; border-collapse: collapse; }
 
-input[type="text"],
-textarea {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 15px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
-}
-
-textarea {
-  min-height: 100px;
-  resize: vertical;
-}
-
-button {
-  margin-right: 10px;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-button:hover {
-  opacity: 0.9;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-
-th,
-td {
-  border: 1px solid #ddd;
-  padding: 12px;
+.custom-table th {
+  background-color: #f8f9fa;
+  color: #555;
+  font-weight: 600;
   text-align: left;
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+  font-size: 13px;
 }
 
-th {
-  background-color: #f4f4f4;
-  font-weight: bold;
+.custom-table td {
+  padding: 15px 20px;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
 }
 
-tr:nth-child(even) {
-  background-color: #f9f9f9;
+.btn {
+  padding: 10px 20px; border-radius: 6px; cursor: pointer;
+  font-size: 14px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid transparent;
 }
+.btn-primary { background-color: #5b5fab; color: white; }
+.btn-secondary { background-color: #e0e0e0; color: #333; }
 
-tr:hover {
-  background-color: #f5f5f5;
+.btn-icon {
+  background: none; padding: 6px; border-radius: 4px;
+  border: none; cursor: pointer; margin-left: 5px;
+}
+.btn-icon.edit { color: #5b5fab; }
+.btn-icon.delete { color: #e74c3c; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  display: flex; justify-content: center; align-items: center; z-index: 1000;
+}
+.modal-content {
+  background: white; width: 90%; max-width: 550px;
+  border-radius: 10px;
+}
+.modal-header { padding: 20px; display: flex; justify-content: space-between; }
+.modal-header h2 { margin: 0; font-size: 18px; }
+.close-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
+.modal-body { padding: 20px; }
+.modal-footer { padding: 20px; display: flex; justify-content: flex-end; gap: 10px; }
+
+.form-group { margin-bottom: 15px; }
+label { display: block; margin-bottom: 6px; font-weight: 600; }
+input, textarea {
+  width: 100%; padding: 10px; border: 1px solid #ddd;
+  border-radius: 6px;
 }
 </style>

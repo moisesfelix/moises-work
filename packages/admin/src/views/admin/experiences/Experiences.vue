@@ -1,14 +1,17 @@
 <template>
   <div>
-    <h2>Gerenciar Experiências</h2>
-    <!-- O conteúdo de gerenciamento de experiências virá aqui -->
+    <Experiences />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import Experiences from '@/components/Experiences.vue';
 
 export default defineComponent({
-  name: 'Experiences'
+  name: 'ExperiencesView',
+  components: {
+    Experiences,
+  },
 });
 </script>
