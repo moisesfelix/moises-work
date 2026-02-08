@@ -3,6 +3,11 @@ import type { Project, Article, Tutorial, Skill, Experience } from 'shared';
 import { db } from '@/firebase/config';
 import { ref, get } from 'firebase/database';
 
+// Define the state for the theme module
+interface ThemeState {
+  currentTheme: 'light' | 'dark';
+}
+
 interface State {
   isLoading: boolean;
   projects: Project[];
@@ -10,7 +15,32 @@ interface State {
   tutorials: Tutorial[];
   skills: any;
   experiences: Experience[];
+  theme: ThemeState;
 }
+
+const themeModule = {
+  namespaced: true,
+  state: {
+    currentTheme: localStorage.getItem('theme') as 'light' | 'dark' || 'dark'
+  },
+  mutations: {
+    setTheme(state: ThemeState, theme: 'light' | 'dark') {
+      state.currentTheme = theme;
+      localStorage.setItem('theme', theme);
+      document.documentElement.className = theme + '-theme';
+    }
+  },
+  actions: {
+    toggleTheme({ commit, state }: { commit: any, state: ThemeState }) {
+      const newTheme = state.currentTheme === 'light' ? 'dark' : 'light';
+      commit('setTheme', newTheme);
+    },
+    loadTheme({ commit }: { commit: any }) {
+      const theme = localStorage.getItem('theme') as 'light' | 'dark' || 'dark';
+      commit('setTheme', theme);
+    }
+  }
+};
 
 const store: Store<State> = createStore({
   state: {
@@ -20,8 +50,12 @@ const store: Store<State> = createStore({
     tutorials: [],
     skills: {},
     experiences: []
-  },
+  } as State,
   
+  modules: {
+    theme: themeModule
+  },
+
   mutations: {
     setPortfolioData(state, payload) {
       state.projects = payload.projects || [];
@@ -64,4 +98,3 @@ const store: Store<State> = createStore({
 });
 
 export default store;
-

@@ -1,0 +1,51 @@
+/* packages/frontend/src/assets/themes.css */
+
+/* Default Dark Theme */
+:root {
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --secondary: #8b5cf6;
+  --dark: #0f172a;
+  --dark-light: #1e293b;
+  --light: #f1f5f9;
+  --gray: #94a3b8;
+  --gray-light: #cbd5e1;
+  --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --radius: 0.5rem;
+  --transition: all 0.3s ease-in-out;
+
+  --background-body: var(--dark);
+  --text-color-body: var(--gray-light);
+  --background-card: var(--dark-light);
+  --text-color-h1: transparent; /* For gradient */
+  --text-color-heading: var(--light);
+  --text-color-paragraph: var(--gray);
+  --text-color-link: var(--primary);
+  --background-header: rgba(15, 23, 42, 0.8);
+  --border-header: 1px solid rgba(255, 255, 255, 0.1);
+  --timeline-border: var(--dark-light);
+}
+
+/* Light Theme */
+.light-theme {
+  --primary: #3b82f6;
+  --primary-dark: #2563eb;
+  --secondary: #8b5cf6;
+  --dark: #f1f5f9;
+  --dark-light: #ffffff;
+  --light: #0f172a;
+  --gray: #64748b;
+  --gray-light: #9ca3af;
+  --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.07);
+
+  --background-body: #f1f5f9;
+  --text-color-body: var(--dark);
+  --background-card: #ffffff;
+  --text-color-h1: transparent; /* For gradient */
+  --text-color-heading: #1e293b;
+  --text-color-paragraph: var(--gray);
+  --text-color-link: var(--primary);
+  --background-header: rgba(255, 255, 255, 0.8);
+  --border-header: 1px solid #e2e8f0;
+  --timeline-border: #e2e8f0;
+}

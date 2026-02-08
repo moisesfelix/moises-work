@@ -120,92 +120,63 @@ watch(tutorial, async () => {
 </script>
 
 <style scoped>
-/* Definição de Variáveis Locais (caso não existam globais) */
 .article-page {
-    --primary: #4f46e5; /* Cor principal (Indigo) */
-    --primary-hover: #4338ca;
-    --text-color: #333;
-    --text-light: #666;
-    --bg-code: #1e1e1e;
-    --border-color: #e5e7eb;
-}
-
-.article-page {
-    padding: 40px 20px;
-    background-color: #f9fafb;
-    min-height: 100vh;
+  padding: 40px 20px;
+  background-color: var(--background-body);
+  color: var(--text-color-body);
 }
 
 .container {
-    max-width: 800px;
-    margin: 0 auto;
-    background: white;
-    padding: 40px;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-/* Header Styles */
-.article-header {
-    margin-bottom: 30px;
-    text-align: left;
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--background-card);
+  padding: 40px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
 }
 
 .article-header h1 {
-    font-size: 2.5rem;
-    font-weight: 800;
-    color: var(--text-color);
-    margin-bottom: 15px;
-    line-height: 1.2;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--text-color-heading);
+  margin-bottom: 15px;
+  line-height: 1.2;
 }
 
 .article-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    color: var(--text-light);
-    font-size: 0.95rem;
-    align-items: center;
-}
-
-.meta-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  color: var(--text-color-paragraph);
+  font-size: 0.95rem;
+  align-items: center;
 }
 
 .meta-item.badge {
-    background-color: #e0e7ff;
-    color: var(--primary);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-weight: 600;
-    font-size: 0.85rem;
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--primary);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.85rem;
 }
 
-/* Image Styles */
 .image-wrapper {
-    width: 100%;
-    margin-bottom: 40px;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  margin-bottom: 40px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
 }
 
 .article-image {
-    width: 100%;
-    height: auto;
-    display: block;
-    object-fit: cover;
-    max-height: 400px;
-    transition: transform 0.3s ease;
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  max-height: 400px;
 }
 
-.article-image:hover {
-    transform: scale(1.02);
-}
-
-/* Steps Styles */
 .tutorial-steps {
     display: flex;
     flex-direction: column;
@@ -217,7 +188,7 @@ watch(tutorial, async () => {
     align-items: center;
     font-size: 1.5rem;
     margin-bottom: 15px;
-    color: var(--text-color);
+    color: var(--text-color-heading);
 }
 
 .step-number {
@@ -232,21 +203,20 @@ watch(tutorial, async () => {
     margin-right: 15px;
     font-size: 1.1rem;
     font-weight: bold;
-    flex-shrink: 0; /* Impede o número de encolher no mobile */
+    flex-shrink: 0;
 }
 
 .step-description {
     font-size: 1.1rem;
     line-height: 1.7;
-    color: #4b5563;
+    color: var(--text-color-paragraph);
     margin-bottom: 20px;
-    padding-left: 50px; /* Alinha com o texto do título */
+    padding-left: 50px;
 }
 
-/* Code Block Styles */
 .code-block {
-    margin-left: 50px; /* Alinha com o texto */
-    background: var(--bg-code);
+    margin-left: 50px;
+    background: #1e1e1e;
     border-radius: 8px;
     overflow: hidden;
     margin-bottom: 20px;
@@ -296,7 +266,7 @@ watch(tutorial, async () => {
 .code-block pre {
     margin: 0;
     padding: 15px;
-    overflow-x: auto; /* Scroll horizontal importante para mobile */
+    overflow-x: auto;
 }
 
 .code-block code {
@@ -305,33 +275,23 @@ watch(tutorial, async () => {
     line-height: 1.5;
 }
 
-/* Footer & Buttons */
 .tutorial-footer {
     margin-top: 60px;
     text-align: center;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--timeline-border);
     padding-top: 30px;
-}
-
-.btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: transform 0.2s;
 }
 
 .btn-back {
     color: var(--primary);
     padding: 10px 20px;
     border-radius: 8px;
-    background: #e0e7ff;
+    background: rgba(59, 130, 246, 0.1);
 }
 
 .btn-back:hover {
-    background: #c7d2fe;
-    transform: translateY(-2px);
+    background: var(--primary);
+    color: white;
 }
 
 .not-found {
@@ -339,7 +299,10 @@ watch(tutorial, async () => {
     padding: 50px 0;
 }
 
-/* RESPONSIVIDADE (Media Queries) */
+.not-found i {
+    color: var(--text-color-paragraph);
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 20px;
@@ -366,12 +329,12 @@ watch(tutorial, async () => {
     }
     
     .step-description {
-        padding-left: 0; /* Remove indentação no mobile para ganhar espaço */
+        padding-left: 0;
         font-size: 1rem;
     }
     
     .code-block {
-        margin-left: 0; /* Code block ocupa largura total no mobile */
+        margin-left: 0;
     }
     
     .code-block code {
