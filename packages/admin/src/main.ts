@@ -4,6 +4,7 @@ import router from './router'
 import store from './store'
 
 import './assets/main.css' // Import global styles if you have them
+import '@/assets/styles.css'
 
 const app = createApp(App)
 
