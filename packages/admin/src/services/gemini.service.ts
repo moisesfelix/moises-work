@@ -145,6 +145,20 @@ class GeminiService {
   }
 
   /**
+   * Gera um texto simples a partir de um prompt.
+   */
+  async generateText(prompt: string): Promise<string> {
+    try {
+      const result = await this.textModel.generateContent(prompt);
+      const response = result.response;
+      return response.text();
+    } catch (error) {
+      console.error('GeminiService: Falha ao gerar texto', error);
+      throw new Error('Falha na geração de texto.');
+    }
+  }
+
+  /**
    * Gera uma imagem usando o modelo Imagen 3 via REST API
    * Retorna um Blob pronto para upload.
    */

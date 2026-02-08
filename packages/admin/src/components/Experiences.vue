@@ -79,7 +79,23 @@
             </div>
 
             <div class="form-group">
-              <label for="description">Descrição</label>
+              <div class="label-container">
+                <label for="description">Descrição</label>
+                <div class="ai-switch">
+                  <span>Gerar com IA</span>
+                  <label class="switch">
+                    <input type="checkbox" v-model="aiEnabled">
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+              </div>
+              <div v-if="aiEnabled" class="ai-input-group">
+                <input type="text" v-model="aiPrompt" placeholder="Digite os pontos chave da experiência..." />
+                <button type="button" @click="generateDescription" class="btn btn-ai-generate" :disabled="generating">
+                  <span v-if="generating" class="spinner"></span>
+                  {{ generating ? '' : 'Gerar' }}
+                </button>
+              </div>
               <textarea id="description" v-model="experienceForm.description" required rows="5"></textarea>
             </div>
 
@@ -99,10 +115,12 @@
   </div>
 </template>
 
+
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useStore } from 'vuex';
 import { v4 as uuidv4 } from 'uuid';
+import { geminiService } from '@/services/gemini.service';
 
 const store = useStore();
 const experiences = computed(() => store.state.experiences || []);
@@ -111,6 +129,9 @@ const loading = computed(() => store.state.loading);
 const showExperienceDialog = ref(false);
 const editingExperience = ref<any>(null);
 const tagsInput = ref('');
+const aiEnabled = ref(false);
+const aiPrompt = ref('');
+const generating = ref(false);
 
 const experienceForm = ref({
   id: null as string | null,
@@ -153,6 +174,8 @@ const closeExperienceDialog = () => {
 
 const resetForm = () => {
   tagsInput.value = '';
+  aiEnabled.value = false;
+  aiPrompt.value = '';
   experienceForm.value = {
     id: null,
     date: '',
@@ -184,6 +207,40 @@ const handleDeleteExperience = async (exp: any) => {
   if (confirm(`Excluir a experiência "${exp.title}"?`)) {
     const updatedExperiences = experiences.value.filter((e: any) => e.id !== exp.id);
     await store.dispatch('saveData', { type: 'experiences', data: updatedExperiences });
+  }
+};
+
+const generateDescription = async () => {
+  if (!aiPrompt.value.trim()) {
+    alert('Por favor, insira um prompt para a IA.');
+    return;
+  }
+  
+  generating.value = true;
+  
+  try {
+    // Prompt refinado com instruções negativas e de formato
+    const prompt = `Atue como um redator profissional de currículos. 
+    Com base no texto abaixo, escreva uma ÚNICA descrição concisa e profissional de experiência profissional.
+    
+    REGRAS ESTRITAS:
+    1. Não use formatação Markdown (sem asteriscos, sem negrito).
+    2. Não use listas ou bullet points.
+    3. Retorne APENAS o texto da descrição, sem introduções, sem opções e sem comentários.
+    4. Use no máximo duas frases.
+
+    Texto base: "${aiPrompt.value}"`;
+
+    const generatedText = await geminiService.generateText(prompt);
+    
+    // Limpeza adicional via Regex (opcional, para garantir que não venham asteriscos residuais)
+    experienceForm.value.description = generatedText.replace(/[*#_]/g, '').trim();
+    
+  } catch (error) {
+    console.error("AI Error:", error);
+    alert('Falha ao gerar descrição.');
+  } finally {
+    generating.value = false;
   }
 };
 
@@ -275,5 +332,99 @@ label { display: block; margin-bottom: 6px; font-weight: 600; }
 input, textarea {
   width: 100%; padding: 10px; border: 1px solid #ddd;
   border-radius: 6px;
+}
+
+.label-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.ai-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 20px;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 12px;
+  width: 12px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #5b5fab;
+}
+
+input:checked + .slider:before {
+  transform: translateX(14px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+.ai-input-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.ai-input-group input {
+  flex: 1;
+}
+
+.btn-ai-generate {
+  padding: 0 15px;
+  background-color: #5b5fab;
+  color: white;
+  height: 38px;
+}
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>
