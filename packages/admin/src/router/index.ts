@@ -10,6 +10,7 @@ import Tutorials from '@/views/admin/tutorials/Tutorials.vue';
 import Experiences from '@/views/admin/experiences/Experiences.vue';
 import Skills from '@/views/admin/skills/Skills.vue';
 import About from '@/views/admin/about/About.vue';
+import Contact from '@/views/admin/contact/Contact.vue';
 
 const routes = [
   {
@@ -68,6 +69,12 @@ const routes = [
         name: 'Skills',
         component: Skills,
         meta: { title: 'Habilidades' }
+      },
+      {
+        path: 'contact',
+        name: 'Contact',
+        component: Contact,
+        meta: { title: 'Contato' }
       }
     ]
   },

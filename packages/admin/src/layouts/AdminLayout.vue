@@ -74,6 +74,14 @@
           </svg>
           <span v-if="!sidebarCollapsed">Habilidades</span>
         </router-link>
+
+        <router-link to="/admin/contact" active-class="active" class="nav-item">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+          </svg>
+          <span v-if="!sidebarCollapsed">Contato</span>
+        </router-link>
       </nav>
       
       <div class="sidebar-footer">
@@ -143,6 +151,7 @@ const pageTitle = computed(() => {
     'Tutorials': 'Gerenciar Tutoriais',
     'Experiences': 'Gerenciar Experiências',
     'Skills': 'Gerenciar Habilidades',
+    'Contact': 'Gerenciar Contato',
   };
   return titles[route.name as string] || 'Dashboard';
 });

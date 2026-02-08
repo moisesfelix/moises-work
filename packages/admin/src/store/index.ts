@@ -49,6 +49,7 @@ interface State {
   skills: any;
   experiences: any[];
   about: About | null;
+  contact: any;
   loading: boolean;
   error: string | null;
 }
@@ -61,6 +62,7 @@ export default createStore<State>({
     skills: {},
     experiences: [],
     about: null,
+    contact: null,
     loading: false,
     error: null,
   },
@@ -73,6 +75,11 @@ export default createStore<State>({
       state.skills = data.skills || {};
       state.experiences = data.experiences || [];
       state.about = data.about || null;
+      state.contact = data.contact || null;
+    },
+
+    setContact(state, contact) {
+      state.contact = contact;
     },
 
     setAbout(state, about) {
