@@ -8,6 +8,13 @@ interface ThemeState {
   currentTheme: 'light' | 'dark';
 }
 
+
+interface AboutState {
+  title: string;
+  description: string;
+  image: string;
+}
+
 interface State {
   isLoading: boolean;
   projects: Project[];
@@ -16,6 +23,7 @@ interface State {
   skills: any;
   experiences: Experience[];
   theme: ThemeState;
+  about: AboutState | null;
 }
 
 const themeModule = {
@@ -49,7 +57,8 @@ const store: Store<State> = createStore({
     articles: [],
     tutorials: [],
     skills: {},
-    experiences: []
+    experiences: [],
+    about: null
   } as State,
   
   modules: {
@@ -63,6 +72,7 @@ const store: Store<State> = createStore({
       state.tutorials = payload.tutorials || [];
       state.skills = payload.skills || {};
       state.experiences = payload.experiences || [];
+      state.about = payload.about || null;
       state.isLoading = false;
     }
   },

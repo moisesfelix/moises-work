@@ -36,12 +36,19 @@ export interface Tutorial {
   }>;
 }
 
+export interface About {
+  title: string;
+  description: string;
+  image: string;
+}
+
 interface State {
   projects: any[];
   articles: Article[];
   tutorials: Tutorial[];
   skills: any;
   experiences: any[];
+  about: About | null;
   loading: boolean;
   error: string | null;
 }
@@ -53,6 +60,7 @@ export default createStore<State>({
     tutorials: [],
     skills: {},
     experiences: [],
+    about: null,
     loading: false,
     error: null,
   },
@@ -64,6 +72,11 @@ export default createStore<State>({
       state.tutorials = data.tutorials || [];
       state.skills = data.skills || {};
       state.experiences = data.experiences || [];
+      state.about = data.about || null;
+    },
+
+    setAbout(state, about) {
+      state.about = about;
     },
 
     setProjects(state, projects) {
@@ -105,7 +118,8 @@ export default createStore<State>({
         const snapshot = await get(dbRef);
 
         if (snapshot.exists()) {
-          commit('setPortfolioData', snapshot.val());
+          const data = snapshot.val();
+          commit('setPortfolioData', data);
         } else {
           commit('setPortfolioData', {
             projects: [],
@@ -113,11 +127,35 @@ export default createStore<State>({
             tutorials: [],
             skills: {},
             experiences: [],
+            about: null,
           });
         }
       } catch (error: any) {
         commit('setError', error.message);
         console.error('Error fetching data:', error);
+      } finally {
+        commit('setLoading', false);
+      }
+    },
+
+    async fetchData({ commit }, type: string) {
+      commit('setLoading', true);
+      commit('setError', null);
+
+      try {
+        const dbRef = ref(db, `/${type}`);
+        const snapshot = await get(dbRef);
+
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          const mutation = `set${type.charAt(0).toUpperCase() + type.slice(1)}`;
+          commit(mutation, data);
+        } else {
+          // Handle case where data doesn't exist
+        }
+      } catch (error: any) {
+        commit('setError', error.message);
+        console.error(`Error fetching ${type}:`, error);
       } finally {
         commit('setLoading', false);
       }

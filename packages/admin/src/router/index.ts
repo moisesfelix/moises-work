@@ -9,6 +9,7 @@ import Articles from '@/views/admin/articles/Articles.vue';
 import Tutorials from '@/views/admin/tutorials/Tutorials.vue';
 import Experiences from '@/views/admin/experiences/Experiences.vue';
 import Skills from '@/views/admin/skills/Skills.vue';
+import About from '@/views/admin/about/About.vue';
 
 const routes = [
   {
@@ -31,6 +32,12 @@ const routes = [
         name: 'Dashboard',
         component: Dashboard,
         meta: { title: 'Dashboard' }
+      },
+      {
+        path: 'about',
+        name: 'About',
+        component: About,
+        meta: { title: 'Sobre' }
       },
       {
         path: 'projects',

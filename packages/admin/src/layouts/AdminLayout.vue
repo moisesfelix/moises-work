@@ -30,6 +30,13 @@
           </svg>
           <span v-if="!sidebarCollapsed">Dashboard</span>
         </router-link>
+
+        <router-link to="/admin/about" active-class="active" class="nav-item">
+          <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"/>
+          </svg>
+          <span v-if="!sidebarCollapsed">Sobre</span>
+        </router-link>
         
         <router-link to="/admin/projects" active-class="active" class="nav-item">
           <svg class="nav-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">

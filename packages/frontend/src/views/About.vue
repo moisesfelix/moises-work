@@ -2,25 +2,32 @@
   <section class="about" id="about">
     <div class="container">
       <h2>Sobre Mim</h2>
-      <div class="about-content">
+      <div v-if="about" class="about-content">
         <div class="about-image">
-          <img src="https://media.licdn.com/dms/image/v2/D4D03AQFq7OqKaCPTkQ/profile-displayphoto-scale_400_400/B4DZwbgAV5J0Ag-/0/1769987904145?e=1772064000&v=beta&t=J-IL4IkEeiYzI7qeo6buqKaj0sM-k1kB0AVlpFo26zY" alt="Moisés Felix">
+          <img :src="about.image" :alt="about.title">
         </div>
         <div class="about-text">
-          <h3>Desenvolvedor FullStack & Professor</h3>
-          <p>Com mais de 5 anos de experiência em desenvolvimento web e mobile, atuei em projetos desafiadores que vão desde e-commerces até sistemas complexos com integração de IA e machine learning.</p>
-          <p>Minha paixão por tecnologia vai além do código - adoro compartilhar conhecimento através do ensino de programação e pensamento computacional para jovens e adultos, capacitando a próxima geração de inovadores.</p>
+          <h3>{{ about.title }}</h3>
+          <p v-html="about.description.replace(/\n/g, '<br>')"></p>
           <div class="about-buttons">
              <a href="#contact" class="btn">Vamos Conversar</a>
              <a href="/path-to-your-cv.pdf" class="btn btn-secondary" target="_blank">Download CV</a>
           </div>
         </div>
       </div>
+       <div v-else class="loading-state">
+        <p>Carregando...</p>
+      </div>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useStore } from 'vuex';
+
+const store = useStore();
+const about = computed(() => store.state.about);
 </script>
 
 <style scoped>
@@ -97,3 +104,4 @@
   }
 }
 </style>
+
