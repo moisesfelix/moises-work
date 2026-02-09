@@ -1,30 +1,23 @@
 <template>
   <section class="about-summary">
     <div class="container">
-      <div class="about-summary-content">
-      
-        <div class="about-text">
-          <h2>Sobre Mim</h2>
-          <p>Com mais de 5 anos de experiência em desenvolvimento web e mobile, atuei em projetos desafiadores que vão desde e-commerces até sistemas complexos com integração de IA e machine learning.</p>
-          <router-link to="/sobre" class="btn btn-secondary">Saiba Mais</router-link>
-        </div>
-      </div>
+
       <div class="stats">
         <div class="stat-item">
-          <span class="stat-number">50+</span>
-          <span class="stat-label">Projetos Concluídos</span>
+          <span class="stat-number">{{ projectsCount }}+</span>
+          <span class="stat-label">Projetos Portifólio</span>
         </div>
         <div class="stat-item">
-          <span class="stat-number">25+</span>
-          <span class="stat-label">Clientes Satisfeitos</span>
+          <span class="stat-number">{{ skillsCategoriesCount }}+</span>
+          <span class="stat-label">Habilidades Técnicas</span>
         </div>
         <div class="stat-item">
-          <span class="stat-number">5+</span>
-          <span class="stat-label">Anos de Experiência</span>
+          <span class="stat-number">{{ experienceCount }}+</span>
+          <span class="stat-label">Experiências</span>
         </div>
         <div class="stat-item">
-          <span class="stat-number">200+</span>
-          <span class="stat-label">Alunos Ensinados</span>
+          <span class="stat-number">{{ contentCount }}+</span>
+          <span class="stat-label">Artigos e Tutorias</span>
         </div>
       </div>
     </div>
@@ -32,49 +25,25 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
+import { useStore } from 'vuex';
+
+const store = useStore();
+
+const about = computed(() => store.state.about);
+const projects = computed(() => store.state.projects);
+const articles = computed(() => store.state.articles);
+const tutorials = computed(() => store.state.tutorials);
+const skills = computed(() => store.state.skills);
+const experiences = computed(() => store.state.experiences);
+
+const projectsCount = computed(() => projects.value?.length || 0);
+const skillsCategoriesCount = computed(() => skills.value ? Object.keys(skills.value).length : 0);
+const experienceCount = computed(() => experiences.value?.length || 0);
+const contentCount = computed(() => (articles.value?.length || 0) + (tutorials.value?.length || 0));
 </script>
 
 <style scoped>
-.about-summary {
-  background-color: var(--dark-light);
-}
-
-.about-summary-content {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  align-items: center;
-  margin-bottom: 4rem;
-}
-
-.about-image {
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 4px solid var(--primary);
-  margin: 0 auto;
-}
-
-.about-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.about-text {
-  text-align: center;
-}
-
-.about-text h2 {
-  text-align: center;
-}
-
-.about-text h2::after {
-  /* Alinha o sublinhado do h2 com o texto */
-  left: 50%;
-  transform: translateX(-50%);
-}
 
 @media (min-width: 768px) {
   .about-summary-content {
@@ -87,10 +56,6 @@
   .about-text h2 {
     text-align: left;
   }
-  .about-text h2::after {
-    left: 0;
-    transform: none;
-  }
   .about-image {
     margin: 0;
   }
@@ -100,8 +65,8 @@
 .stats {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
-  padding-top: 2rem;
+  gap: 2rem;
+  padding-top: 3rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -111,15 +76,19 @@
 
 .stat-number {
   display: block;
-  font-size: clamp(2rem, 5vw, 2.5rem);
+  font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 700;
   color: var(--primary);
   line-height: 1;
+  margin-bottom: 0.5rem;
 }
 
 .stat-label {
   font-size: 0.9rem;
   color: var(--gray);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 @media (min-width: 768px) {
