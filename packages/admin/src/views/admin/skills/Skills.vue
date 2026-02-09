@@ -204,7 +204,10 @@ const saveAISkills = async () => {
   // Merge AI results with existing skills
   const currentSkills = JSON.parse(JSON.stringify(skills.value || {}));
   
-  for (const [category, tools] of Object.entries(aiResults.value)) {
+  for (const [rawCategory, tools] of Object.entries(aiResults.value)) {
+    // Sanitize category name: remove invalid characters for Firebase keys
+    const category = rawCategory.replace(/[.#$/[\]]/g, '-');
+
     if (!currentSkills[category] || currentSkills[category]._isEmpty) {
       currentSkills[category] = [];
     }
@@ -218,9 +221,7 @@ const saveAISkills = async () => {
       const existingToolIndex = currentSkills[category].findIndex((t: any) => t.name.toLowerCase() === newTool.name.toLowerCase());
       
       if (existingToolIndex !== -1) {
-        // Update existing tool if needed, or maybe keep the higher percentage?
-        // For now, let's keep the user's manual value or update it? 
-        // Let's update it for now as this is an explicit "AI Analysis" action
+        // Update existing tool if needed
         currentSkills[category][existingToolIndex].percent = newTool.percent;
       } else {
         currentSkills[category].push(newTool);
