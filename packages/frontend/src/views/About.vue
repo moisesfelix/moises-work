@@ -10,8 +10,8 @@
           <h3>{{ about.title }}</h3>
           <p v-html="about.description.replace(/\n/g, '<br>')"></p>
           <div class="about-buttons">
-             <a href="#contact" class="btn">Vamos Conversar</a>
-             <a href="/path-to-your-cv.pdf" class="btn btn-secondary" target="_blank">Download CV</a>
+             <button @click="openWhatsapp" class="btn">Vamos Conversar</button>
+             <button @click="openCVModal" class="btn btn-secondary">Download CV</button>
           </div>
         </div>
       </div>
@@ -19,15 +19,39 @@
         <p>Carregando...</p>
       </div>
     </div>
+    
+    <CVModal v-if="showCVModal" :show="showCVModal" @close="closeCVModal" />
   </section>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { useStore } from 'vuex';
+import CVModal from '@/components/CVModal.vue';
 
 const store = useStore();
 const about = computed(() => store.state.about);
+const contact = computed(() => store.state.contact);
+const showCVModal = ref(false);
+
+const openCVModal = () => {
+  showCVModal.value = true;
+};
+
+const closeCVModal = () => {
+  showCVModal.value = false;
+};
+
+const openWhatsapp = () => {
+  if (contact.value && contact.value.whatsapp) {
+    window.open(contact.value.whatsapp, '_blank');
+  } else {
+    const contactSection = document.getElementById('contact');
+    if (contactSection) {
+      contactSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+};
 </script>
 
 <style scoped>
