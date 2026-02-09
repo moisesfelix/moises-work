@@ -14,19 +14,8 @@
             </div>
             
             <div class="portfolio-grid">
-                <div v-for="project in filteredProjects" 
-                     :key="project.id" 
-                     class="portfolio-item">
-                    <div class="portfolio-img">
-                        <img :src="project.image" :alt="project.title">
-                    </div>
-                    <div class="portfolio-info" style="padding: 25px;">
-                        <h3>{{ project.title }}</h3>
-                        <p>{{ project.description }}</p>
-                        <div class="portfolio-tags">
-                            <span v-for="tag in project.tags" :key="tag" class="tech-tag">{{ tag }}</span>
-                        </div>
-                    </div>
+                <div v-for="project in filteredProjects" :key="project.id">
+                    <ProjectCard :project="project" />
                 </div>
             </div>
         </div>
@@ -36,6 +25,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useStore } from 'vuex';
+import ProjectCard from '@/components/ProjectCard.vue';
 
 const store = useStore();
 
@@ -54,8 +44,14 @@ const filteredProjects = computed(() => {
     if (activeFilter.value === 'all') {
         return projects.value;
     }
-    return projects.value.filter(project => 
-        (project as any).category.includes(activeFilter.value)
-    );
+    const active = activeFilter.value.toLowerCase();
+    
+    // Filter by category or tags
+    return projects.value.filter((project: any) => {
+        const category = (project.category || '').toLowerCase();
+        const tags = (project.tags || []).map((t: string) => t.toLowerCase());
+        
+        return category.includes(active) || tags.includes(active);
+    });
 });
 </script>

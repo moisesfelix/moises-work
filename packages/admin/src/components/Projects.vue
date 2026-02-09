@@ -101,6 +101,22 @@
             </div>
 
             <div class="form-group">
+              <label for="githubUrl">URL do Repositório GitHub</label>
+              <input type="text" id="githubUrl" v-model="projectForm.githubUrl" placeholder="https://github.com/..." />
+            </div>
+
+            <div class="form-row">
+              <div class="form-group half">
+                <label for="articleUrl">URL do Artigo Relacionado</label>
+                <input type="text" id="articleUrl" v-model="projectForm.articleUrl" placeholder="https://..." />
+              </div>
+              <div class="form-group half">
+                <label for="tutorialUrl">URL do Tutorial Relacionado</label>
+                <input type="text" id="tutorialUrl" v-model="projectForm.tutorialUrl" placeholder="https://..." />
+              </div>
+            </div>
+
+            <div class="form-group">
               <label for="description">Descrição</label>
               <textarea id="description" v-model="projectForm.description" rows="4"></textarea>
             </div>
@@ -139,7 +155,10 @@ export default {
         description: '',
         image: '',
         tags: '',
-        category: ''
+        category: '',
+        githubUrl: '',
+        articleUrl: '',
+        tutorialUrl: ''
       }
     };
   },
@@ -217,7 +236,10 @@ export default {
         description: '',
         image: '',
         tags: '',
-        category: ''
+        category: '',
+        githubUrl: '',
+        articleUrl: '',
+        tutorialUrl: ''
       };
     },
     async saveProject() {
