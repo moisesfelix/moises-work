@@ -47,6 +47,7 @@ export interface GeneratedTutorial {
     content: string;
     code?: string;
   }>;
+  tags?: string[];
 }
 
 // --- SERVIÇO ---
@@ -131,7 +132,8 @@ class GeminiService {
       "duration": "XX min",
       "excerpt": "Resumo",
       "makeImagePrompt": "Prompt em INGLÊS para imagem de capa.",
-      "steps": [{ "title": "Passo 1", "content": "HTML...", "code": "..." }]
+      "steps": [{ "title": "Passo 1", "content": "HTML...", "code": "..." }],
+      "tags": ["tag1", "tag2"]
     }
     `;
 

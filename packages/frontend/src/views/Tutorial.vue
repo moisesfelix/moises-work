@@ -15,6 +15,10 @@
                           {{ tutorial.category }}
                       </div>
                   </div>
+                  
+                  <div v-if="tutorial.tags && tutorial.tags.length > 0" class="tutorial-tags">
+                      <span v-for="tag in tutorial.tags" :key="tag" class="tag-badge">#{{ tag }}</span>
+                  </div>
               </div>
               
               <div class="image-wrapper">
@@ -159,6 +163,22 @@ watch(tutorial, async () => {
   border-radius: 20px;
   font-weight: 600;
   font-size: 0.85rem;
+}
+
+.tutorial-tags {
+  margin-top: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-badge {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--text-color-paragraph);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-family: monospace;
 }
 
 .image-wrapper {

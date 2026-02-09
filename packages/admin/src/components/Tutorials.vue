@@ -145,6 +145,11 @@
             </div>
 
             <div class="form-group">
+              <label for="tags">Tags (separadas por vírgula)</label>
+              <input type="text" id="tags" v-model="tutorialForm.tags" placeholder="Ex: vue, tutorial, iniciante" />
+            </div>
+
+            <div class="form-group">
               <label for="excerpt">Resumo</label>
               <textarea id="excerpt" v-model="tutorialForm.excerpt" rows="2"
                 placeholder="Breve descrição..."></textarea>
@@ -270,7 +275,8 @@ const tutorialForm = ref({
   difficulty: 'Iniciante',
   image: '',
   excerpt: '',
-  steps: '' // Pode ser string JSON ou HTML
+  steps: '', // Pode ser string JSON ou HTML
+  tags: ''
 });
 
 onMounted(() => {
@@ -348,7 +354,8 @@ const openEditTutorialDialog = (tutorial: any) => {
   tutorialForm.value = {
     ...tutorial,
     // Se steps for objeto/array, converte para string para edição no textarea simples
-    steps: typeof tutorial.steps === 'object' ? JSON.stringify(tutorial.steps, null, 2) : tutorial.steps
+    steps: typeof tutorial.steps === 'object' ? JSON.stringify(tutorial.steps, null, 2) : tutorial.steps,
+    tags: tutorial.tags ? tutorial.tags.join(', ') : ''
   };
   showTutorialDialog.value = true;
 };
@@ -371,13 +378,17 @@ const resetForm = () => {
     difficulty: 'Iniciante',
     image: '',
     excerpt: '',
-    steps: ''
+    steps: '',
+    tags: ''
   };
 };
 
 const saveTutorial = async () => {
   let updatedTutorials = [...tutorials.value];
-  const formData = { ...tutorialForm.value };
+  const formData = { 
+    ...tutorialForm.value,
+    tags: tutorialForm.value.tags ? tutorialForm.value.tags.split(',').map(tag => tag.trim()) : []
+  };
 
   // Tratamento básico para steps (se for JSON válido, parseia, senão salva string)
   try {
