@@ -4,17 +4,21 @@
             <div class="container hero-content">
                 <div class="hero-text">
                     <span class="hero-badge">Desenvolvedor FullStack & Professor</span>
-                    <h1>Moisés Felix</h1>
-                    <p>Transformando ideias complexas em soluções digitais elegantes e eficientes. Apaixonado por ensinar e aplicar tecnologias de ponta, incluindo IA e Machine Learning.</p>
-                    <div class="social-links">
-                        <a href="https://github.com/moises-felix" target="_blank" class="btn">GitHub</a>
-                        <a href="https://linkedin.com/in/moises-felix" target="_blank" class="btn btn-secondary">LinkedIn</a>
+                    <h1>{{ about?.title || 'Moisés Felix' }}</h1>
+                    <p>{{ about?.excerpt || about?.description || 'Transformando ideias complexas em soluções digitais elegantes e eficientes. Apaixonado por ensinar e aplicar tecnologias de ponta, incluindo IA e Machine Learning.' }}</p>
+                    <div class="social-links" v-if="contact">
+                        <a v-if="contact.github" :href="contact.github" target="_blank" class="btn">
+                            <i class="fab fa-github"></i> GitHub
+                        </a>
+                        <a v-if="contact.linkedin" :href="contact.linkedin" target="_blank" class="btn btn-secondary">
+                            <i class="fab fa-linkedin"></i> LinkedIn
+                        </a>
                     </div>
                 </div>
                 
-                <div class="hero-image">
+                <div class="hero-image" v-if="about?.image">
                     <div class="image-wrapper">
-                        <img src="https://media.licdn.com/dms/image/v2/D4D03AQFq7OqKaCPTkQ/profile-displayphoto-scale_400_400/B4DZwbgAV5J0Ag-/0/1769987904145?e=1772064000&v=beta&t=J-IL4IkEeiYzI7qeo6buqKaj0sM-k1kB0AVlpFo26zY" alt="Moisés Felix">
+                        <img :src="about.image" :alt="about.title">
                     </div>
                 </div>
             </div>
@@ -87,6 +91,8 @@ import AboutSummary from '@/components/AboutSummary.vue';
 
 const store = useStore();
 
+const about = computed(() => store.state.about);
+const contact = computed(() => store.state.contact);
 const projects = computed(() => store.state.projects);
 const articles = computed(() => store.getters.getLatestArticles(3));
 </script>
