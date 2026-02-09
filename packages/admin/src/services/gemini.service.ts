@@ -31,6 +31,7 @@ export interface GeneratedArticle {
     language: string;
     code: string;
   }>;
+  tags?: string[]; // Adicionado: Tags do artigo
 }
 
 export interface GeneratedTutorial {
@@ -92,7 +93,8 @@ class GeminiService {
       "slug": "url-amigavel",
       "readTime": "X min",
       "makeImagePrompt": "Prompt em INGLÊS detalhado para gerar uma imagem de capa estilo tech/modern/minimalist.",
-      "codeBlocks": []
+      "codeBlocks": [],
+      "tags": ["tag1", "tag2", "tag3"]
     }
     `;
 

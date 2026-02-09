@@ -119,6 +119,11 @@
             </div>
 
             <div class="form-group">
+              <label for="tags">Tags (separadas por vírgula)</label>
+              <input type="text" id="tags" v-model="articleForm.tags" placeholder="Ex: nodejs, backend, tutorial" />
+            </div>
+
+            <div class="form-group">
               <label for="description">Conteúdo / Resumo</label>
               <textarea id="description" v-model="articleForm.description" required rows="5"></textarea>
             </div>
@@ -236,7 +241,8 @@ const articleForm = ref({
   category: '',
   readTime: '',
   image: '',
-  date: ''
+  date: '',
+  tags: ''
 });
 
 onMounted(() => {
@@ -319,7 +325,7 @@ const openAddArticleDialog = () => {
 
 const openEditArticleDialog = (article: any) => {
   editingArticle.value = article;
-  articleForm.value = { ...article };
+  articleForm.value = { ...article, tags: article.tags ? article.tags.join(', ') : '' };
   showArticleDialog.value = true;
 };
 
@@ -339,13 +345,14 @@ const resetForm = () => {
     category: '',
     readTime: '',
     image: '',
-    date: new Date().toLocaleDateString('pt-BR')
+    date: new Date().toLocaleDateString('pt-BR'),
+    tags: ''
   };
 };
 
 const saveArticle = async () => {
   let updatedArticles = [...articles.value];
-  const formData = { ...articleForm.value };
+  const formData = { ...articleForm.value, tags: articleForm.value.tags ? articleForm.value.tags.split(',').map(tag => tag.trim()) : [] };
 
   if (editingArticle.value) {
     const index = updatedArticles.findIndex(a => a.id === formData.id);

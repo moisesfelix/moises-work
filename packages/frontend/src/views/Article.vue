@@ -16,6 +16,10 @@
                           {{ article.category }}
                       </div>
                   </div>
+                  
+                  <div v-if="article.tags && article.tags.length > 0" class="article-tags">
+                      <span v-for="tag in article.tags" :key="tag" class="tag-badge">#{{ tag }}</span>
+                  </div>
               </div>
               
               <div class="image-container">
@@ -156,6 +160,22 @@ watch(article, async () => {
   font-weight: 600;
   font-size: 0.8rem;
   text-transform: uppercase;
+}
+
+.article-tags {
+  margin-top: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-badge {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: var(--text-color-paragraph);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-family: monospace;
 }
 
 .image-container {
