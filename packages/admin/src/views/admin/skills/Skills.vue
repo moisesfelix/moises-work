@@ -201,38 +201,43 @@ const analyzeSkillsWithAI = async () => {
 };
 
 const saveAISkills = async () => {
-  // Merge AI results with existing skills
-  const currentSkills = JSON.parse(JSON.stringify(skills.value || {}));
+  // 1. Save current skills to history
+  if (skills.value) {
+    try {
+      const historyKey = `skills_history/${Date.now()}`;
+      await store.dispatch('saveData', { type: historyKey, data: JSON.parse(JSON.stringify(skills.value)) });
+      console.log('Skills history saved successfully to', historyKey);
+    } catch (historyError) {
+      console.error('Failed to save skills history:', historyError);
+      // We proceed even if history fails, or you might want to stop here
+    }
+  }
+
+  // 2. Prepare new skills from AI results (REPLACING current skills)
+  const newSkills: any = {};
   
   for (const [rawCategory, tools] of Object.entries(aiResults.value)) {
     // Sanitize category name: remove invalid characters for Firebase keys
     const category = rawCategory.replace(/[.#$/[\]]/g, '-');
 
-    if (!currentSkills[category] || currentSkills[category]._isEmpty) {
-      currentSkills[category] = [];
+    if (!newSkills[category]) {
+      newSkills[category] = [];
     }
     
-    // Ensure it's an array
-    if (!Array.isArray(currentSkills[category])) {
-      currentSkills[category] = [];
-    }
-
-    (tools as any[]).forEach((newTool: any) => {
-      const existingToolIndex = currentSkills[category].findIndex((t: any) => t.name.toLowerCase() === newTool.name.toLowerCase());
-      
-      if (existingToolIndex !== -1) {
-        // Update existing tool if needed
-        currentSkills[category][existingToolIndex].percent = newTool.percent;
-      } else {
-        currentSkills[category].push(newTool);
-      }
+    // Ensure tools are added as array
+    (tools as any[]).forEach((tool: any) => {
+      newSkills[category].push({
+        name: tool.name,
+        percent: tool.percent
+      });
     });
   }
 
   try {
-    await store.dispatch('saveData', { type: 'skills', data: currentSkills });
+    // Save the new skills, effectively replacing the old ones
+    await store.dispatch('saveData', { type: 'skills', data: newSkills });
     showAIResultDialog.value = false;
-    alert("Habilidades atualizadas com sucesso pela IA!");
+    alert("Habilidades substituídas com sucesso pela IA! O histórico foi salvo.");
   } catch (error) {
     console.error('Error saving AI skills:', error);
     alert('Erro ao salvar habilidades da IA.');
