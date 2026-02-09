@@ -40,5 +40,6 @@ provide('showToast', showToast);
 
 onMounted(() => {
   store.dispatch('theme/loadTheme');
+  store.dispatch('fetchPortfolioData');
 });
 </script>
