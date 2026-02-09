@@ -151,19 +151,22 @@ class GeminiService {
   /**
    * Analisa experiências e projetos para extrair e categorizar habilidades
    */
-  async analyzeSkills(data: { experiences: any[]; projects: any[] }): Promise<any> {
+  async analyzeSkills(data: { experiences: any[]; projects: any[]; articles: any[]; tutorials: any[] }): Promise<any> {
     const prompt = `
     Você é um especialista em análise de currículos e perfis técnicos.
-    Analise as seguintes experiências profissionais e projetos de portfólio para extrair e categorizar habilidades técnicas.
+    Analise as seguintes experiências profissionais, projetos de portfólio, artigos técnicos escritos e tutoriais criados para extrair e categorizar habilidades técnicas.
     
     DADOS PARA ANÁLISE:
     Experiências: ${JSON.stringify(data.experiences.map(e => ({ role: e.role, description: e.description, technologies: e.technologies })))}
-    Projetos: ${JSON.stringify(data.projects.map(p => ({ title: p.title, description: p.description, technologies: p.technologies })))}
+    Projetos: ${JSON.stringify(data.projects.map(p => ({ title: p.title, description: p.description, technologies: p.technologies, tags: p.tags })))}
+    Artigos: ${JSON.stringify(data.articles.map(a => ({ title: a.title, category: a.category, tags: a.tags })))}
+    Tutoriais: ${JSON.stringify(data.tutorials.map(t => ({ title: t.title, category: t.category, tags: t.tags })))}
 
     TAREFA:
     1. Identifique todas as habilidades técnicas, ferramentas, linguagens e frameworks mencionados ou implícitos.
-    2. Agrupe-os em categorias lógicas (ex: "Frontend", "Backend", "DevOps", "Mobile", "Database", "Tools", etc.).
-    3. Para cada habilidade, estime um nível de proficiência (0-100) baseado na frequência de uso e complexidade dos projetos onde aparece.
+    2. Considere as TAGS de Artigos e Tutoriais como fortes indicadores de conhecimento e habilidade técnica.
+    3. Agrupe-os em categorias lógicas (ex: "Frontend", "Backend", "DevOps", "Mobile", "Database", "Tools", etc.).
+    4. Para cada habilidade, estime um nível de proficiência (0-100) baseado na frequência de uso e complexidade dos projetos/artigos onde aparece.
        - Se aparecer muitas vezes ou em projetos complexos -> 80-100%
        - Se aparecer moderadamente -> 50-79%
        - Se aparecer pouco -> 20-49%

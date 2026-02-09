@@ -183,13 +183,15 @@ const analyzeSkillsWithAI = async () => {
   try {
     const experiences = store.state.experiences || [];
     const projects = store.state.projects || [];
+    const articles = store.state.articles || [];
+    const tutorials = store.state.tutorials || [];
     
-    if (experiences.length === 0 && projects.length === 0) {
-      alert("Adicione experiências ou projetos primeiro para que a IA possa analisar.");
+    if (experiences.length === 0 && projects.length === 0 && articles.length === 0 && tutorials.length === 0) {
+      alert("Adicione experiências, projetos, artigos ou tutoriais primeiro para que a IA possa analisar.");
       return;
     }
 
-    const result = await geminiService.analyzeSkills({ experiences, projects });
+    const result = await geminiService.analyzeSkills({ experiences, projects, articles, tutorials });
     aiResults.value = result;
     showAIResultDialog.value = true;
   } catch (error) {
