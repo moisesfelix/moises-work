@@ -2,6 +2,17 @@
   "projects": {
     "default": "moises-work"
   },
-  "targets": {},
+  "targets": {
+    "moises-work": {
+      "hosting": {
+        "moises-work-app": [
+          "moises-work-app"
+        ],
+        "moises-work-admin": [
+          "moises-work-admin"
+        ]
+      }
+    }
+  },
   "etags": {}
 }

@@ -3,7 +3,7 @@
         <div class="container header-container">
             <router-link to="/" class="logo">
                 <i class="fas fa-code"></i>
-                Moisés<span>Felix</span>
+                moises.work
             </router-link>
             
             <div class="nav-wrapper">

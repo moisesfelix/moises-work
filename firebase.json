@@ -1,7 +1,7 @@
 {
   "hosting": [
     {
-      "target": "portfolio",
+      "target": "moises-work-app",
       "public": "packages/frontend/dist",
       "ignore": [
         "firebase.json",
@@ -16,7 +16,7 @@
       ]
     },
     {
-      "target": "admin",
+      "target": "moises-work-admin",
       "public": "packages/admin/dist",
       "ignore": [
         "firebase.json",

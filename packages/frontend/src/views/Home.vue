@@ -3,7 +3,7 @@
         <section class="hero">
             <div class="container hero-content">
                 <div class="hero-text">
-                    <span class="hero-badge">Desenvolvedor FullStack & Professor</span>
+                    <span class="hero-badge">Desenvolvedor FullStack</span>
                     <h1>{{ about?.title || 'Moisés Felix' }}</h1>
                     <p>{{ about?.excerpt || about?.description || 'Transformando ideias complexas em soluções digitais elegantes e eficientes. Apaixonado por ensinar e aplicar tecnologias de ponta, incluindo IA e Machine Learning.' }}</p>
                     <div class="social-links" v-if="contact">
