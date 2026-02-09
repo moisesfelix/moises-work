@@ -6,6 +6,10 @@
         <p class="page-subtitle">Gerencie suas categorias e habilidades</p>
       </div>
       <div class="header-actions">
+        <button class="btn btn-secondary" @click="analyzeSkillsWithAI" :disabled="analyzing" style="margin-right: 10px;">
+           <span v-if="analyzing">🤖 Analisando...</span>
+           <span v-else>✨ Analisar com IA</span>
+        </button>
         <button class="btn btn-primary" @click="openAddCategoryDialog">
           + Nova Categoria
         </button>
@@ -89,6 +93,38 @@
     </transition>
 
     <transition name="fade">
+      <div v-if="showAIResultDialog" class="modal-overlay" @click.self="closeDialogs">
+        <div class="modal-content" style="max-width: 800px;">
+          <div class="modal-header">
+            <h2>Resultado da Análise de IA</h2>
+          </div>
+          <div class="modal-body">
+            <p style="margin-bottom: 15px; color: #666;">
+              A IA identificou as seguintes habilidades baseadas em suas experiências e projetos.
+              Clique em "Aplicar Alterações" para salvar.
+            </p>
+            
+            <div class="ai-results-container">
+              <div v-for="(tools, category) in aiResults" :key="category" class="ai-category-block">
+                <h4>{{ category }}</h4>
+                <div class="ai-tools-list">
+                  <div v-for="tool in tools" :key="tool.name" class="ai-tool-tag">
+                    {{ tool.name }}
+                    <span class="ai-tool-percent">{{ tool.percent }}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" @click="closeDialogs">Cancelar</button>
+            <button type="button" class="btn btn-primary" @click="saveAISkills">Aplicar Alterações</button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="fade">
       <div v-if="showToolDialog" class="modal-overlay" @click.self="closeDialogs">
         <div class="modal-content">
           <div class="modal-header">
@@ -117,6 +153,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
+import { geminiService } from '@/services/gemini.service';
 
 const store = useStore();
 const skills = computed(() => store.state.skills);
@@ -124,6 +161,9 @@ const loading = computed(() => store.state.loading);
 
 const showCategoryDialog = ref(false);
 const showToolDialog = ref(false);
+const showAIResultDialog = ref(false);
+const analyzing = ref(false);
+const aiResults = ref<any>({});
 
 const categoryForm = ref({ name: '' });
 const toolForm = ref({
@@ -137,6 +177,66 @@ const toolForm = ref({
 onMounted(() => {
   store.dispatch('fetchAllData');
 });
+
+const analyzeSkillsWithAI = async () => {
+  analyzing.value = true;
+  try {
+    const experiences = store.state.experiences || [];
+    const projects = store.state.projects || [];
+    
+    if (experiences.length === 0 && projects.length === 0) {
+      alert("Adicione experiências ou projetos primeiro para que a IA possa analisar.");
+      return;
+    }
+
+    const result = await geminiService.analyzeSkills({ experiences, projects });
+    aiResults.value = result;
+    showAIResultDialog.value = true;
+  } catch (error) {
+    console.error("Erro na análise de IA:", error);
+    alert("Falha ao analisar habilidades com IA.");
+  } finally {
+    analyzing.value = false;
+  }
+};
+
+const saveAISkills = async () => {
+  // Merge AI results with existing skills
+  const currentSkills = JSON.parse(JSON.stringify(skills.value || {}));
+  
+  for (const [category, tools] of Object.entries(aiResults.value)) {
+    if (!currentSkills[category] || currentSkills[category]._isEmpty) {
+      currentSkills[category] = [];
+    }
+    
+    // Ensure it's an array
+    if (!Array.isArray(currentSkills[category])) {
+      currentSkills[category] = [];
+    }
+
+    (tools as any[]).forEach((newTool: any) => {
+      const existingToolIndex = currentSkills[category].findIndex((t: any) => t.name.toLowerCase() === newTool.name.toLowerCase());
+      
+      if (existingToolIndex !== -1) {
+        // Update existing tool if needed, or maybe keep the higher percentage?
+        // For now, let's keep the user's manual value or update it? 
+        // Let's update it for now as this is an explicit "AI Analysis" action
+        currentSkills[category][existingToolIndex].percent = newTool.percent;
+      } else {
+        currentSkills[category].push(newTool);
+      }
+    });
+  }
+
+  try {
+    await store.dispatch('saveData', { type: 'skills', data: currentSkills });
+    showAIResultDialog.value = false;
+    alert("Habilidades atualizadas com sucesso pela IA!");
+  } catch (error) {
+    console.error('Error saving AI skills:', error);
+    alert('Erro ao salvar habilidades da IA.');
+  }
+};
 
 const openAddCategoryDialog = () => {
   categoryForm.value.name = '';
@@ -253,10 +353,61 @@ const deleteTool = async (category: string, toolName: string) => {
 const closeDialogs = () => {
   showCategoryDialog.value = false;
   showToolDialog.value = false;
+  showAIResultDialog.value = false;
 };
 </script>
 
 <style scoped>
+/* AI Results Modal */
+.ai-results-container {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.ai-category-block {
+  margin-bottom: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.ai-category-block h4 {
+  margin-top: 0;
+  color: #5b5fab;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.ai-tools-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ai-tool-tag {
+  background: #eef2ff;
+  color: #4f46e5;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.ai-tool-percent {
+  font-weight: bold;
+  font-size: 0.8rem;
+  background: rgba(255,255,255,0.5);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
 /* General Styles */
 .page-container {
   padding: 20px;

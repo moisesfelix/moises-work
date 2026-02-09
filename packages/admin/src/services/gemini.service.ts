@@ -145,6 +145,54 @@ class GeminiService {
   }
 
   /**
+   * Analisa experiências e projetos para extrair e categorizar habilidades
+   */
+  async analyzeSkills(data: { experiences: any[]; projects: any[] }): Promise<any> {
+    const prompt = `
+    Você é um especialista em análise de currículos e perfis técnicos.
+    Analise as seguintes experiências profissionais e projetos de portfólio para extrair e categorizar habilidades técnicas.
+    
+    DADOS PARA ANÁLISE:
+    Experiências: ${JSON.stringify(data.experiences.map(e => ({ role: e.role, description: e.description, technologies: e.technologies })))}
+    Projetos: ${JSON.stringify(data.projects.map(p => ({ title: p.title, description: p.description, technologies: p.technologies })))}
+
+    TAREFA:
+    1. Identifique todas as habilidades técnicas, ferramentas, linguagens e frameworks mencionados ou implícitos.
+    2. Agrupe-os em categorias lógicas (ex: "Frontend", "Backend", "DevOps", "Mobile", "Database", "Tools", etc.).
+    3. Para cada habilidade, estime um nível de proficiência (0-100) baseado na frequência de uso e complexidade dos projetos onde aparece.
+       - Se aparecer muitas vezes ou em projetos complexos -> 80-100%
+       - Se aparecer moderadamente -> 50-79%
+       - Se aparecer pouco -> 20-49%
+    
+    RETORNO OBRIGATÓRIO:
+    Retorne APENAS um JSON válido com a seguinte estrutura (sem markdown):
+    {
+      "Frontend": [
+        { "name": "React", "percent": 90 },
+        { "name": "CSS", "percent": 85 }
+      ],
+      "Backend": [
+        { "name": "Node.js", "percent": 80 }
+      ],
+      ... outras categorias
+    }
+    `;
+
+    try {
+      const result = await this.textModel.generateContent(prompt);
+      let text = result.response.text();
+      
+      // Limpeza robusta para garantir JSON válido
+      text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
+      return JSON.parse(text);
+    } catch (error) {
+      console.error('GeminiService: Falha ao analisar habilidades', error);
+      throw new Error('Falha na análise de habilidades pela IA.');
+    }
+  }
+
+  /**
    * Gera um texto simples a partir de um prompt.
    */
   async generateText(prompt: string): Promise<string> {
