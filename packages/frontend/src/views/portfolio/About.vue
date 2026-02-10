@@ -30,8 +30,8 @@ import { useStore } from 'vuex';
 import CVModal from '@/components/CVModal.vue';
 
 const store = useStore();
-const about = computed(() => store.state.about);
-const contact = computed(() => store.state.contact);
+const about = computed(() => store.state.portfolios.about);
+const contact = computed(() => store.state.portfolios.contact);
 const showCVModal = ref(false);
 
 const openCVModal = () => {

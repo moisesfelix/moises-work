@@ -241,8 +241,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { storageService } from '@/services/storage.service';
 
 const store = useStore();
-const tutorials = computed(() => store.state.tutorials || []);
-const loading = computed(() => store.state.loading);
+const tutorials = computed(() => store.state.portfolios.tutorials || []);
+const loading = computed(() => store.state.ui.isLoading);
 
 // Flags de Estado
 const showAIModal = ref(false);
@@ -277,7 +277,7 @@ const tutorialForm = ref({
 });
 
 onMounted(() => {
-  store.dispatch('fetchAllData');
+  store.dispatch('portfolios/fetchPortfolioData');
 });
 
 // --- Upload Manual de Imagem ---
@@ -327,7 +327,7 @@ const generateTutorial = async () => {
 
   try {
     // Chama a action no Vuex (que deve usar geminiService.generateTutorial)
-    await store.dispatch('generateTutorialWithAI', aiForm.value);
+    await store.dispatch('ai/generateTutorialWithAI', aiForm.value);
 
     closeAIModal();
     alert('Tutorial gerado com sucesso!');
@@ -402,7 +402,7 @@ const saveTutorial = async () => {
     updatedTutorials.push(formData);
   }
 
-  await store.dispatch('saveData', { type: 'tutorials', data: updatedTutorials });
+  await store.dispatch('portfolios/saveData', { type: 'tutorials', data: updatedTutorials });
   closeTutorialDialog();
 };
 
@@ -419,7 +419,7 @@ const handleDeleteTutorial = async (tutorial: any) => {
 
     // 2. Remove dados
     const updatedTutorials = tutorials.value.filter((t: any) => t.id !== tutorial.id);
-    await store.dispatch('saveData', { type: 'tutorials', data: updatedTutorials });
+    await store.dispatch('portfolios/saveData', { type: 'tutorials', data: updatedTutorials });
   }
 };
 </script>

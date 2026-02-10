@@ -150,8 +150,8 @@ import { useStore } from 'vuex';
 import { geminiService } from '@/services/gemini.service';
 
 const store = useStore();
-const skills = computed(() => store.state.skills);
-const loading = computed(() => store.state.loading);
+const skills = computed(() => store.state.portfolios.skills);
+const loading = computed(() => store.state.ui.isLoading);
 
 const showCategoryDialog = ref(false);
 const showToolDialog = ref(false);
@@ -169,16 +169,16 @@ const toolForm = ref({
 });
 
 onMounted(() => {
-  store.dispatch('fetchAllData');
+  store.dispatch('portfolios/fetchPortfolioData');
 });
 
 const analyzeSkillsWithAI = async () => {
   analyzing.value = true;
   try {
-    const experiences = store.state.experiences || [];
-    const projects = store.state.projects || [];
-    const articles = store.state.articles || [];
-    const tutorials = store.state.tutorials || [];
+    const experiences = store.state.portfolios.experiences || [];
+    const projects = store.state.portfolios.projects || [];
+    const articles = store.state.portfolios.articles || [];
+    const tutorials = store.state.portfolios.tutorials || [];
     
     if (experiences.length === 0 && projects.length === 0 && articles.length === 0 && tutorials.length === 0) {
       alert("Adicione experiências, projetos, artigos ou tutoriais primeiro para que a IA possa analisar.");
@@ -200,7 +200,7 @@ const saveAISkills = async () => {
   if (skills.value) {
     try {
       const historyKey = `skills_history/${Date.now()}`;
-      await store.dispatch('saveData', { type: historyKey, data: JSON.parse(JSON.stringify(skills.value)) });
+      await store.dispatch('portfolios/saveData', { type: historyKey, data: JSON.parse(JSON.stringify(skills.value)) });
     } catch (historyError) {
       console.error('Failed to save skills history:', historyError);
     }
@@ -224,7 +224,7 @@ const saveAISkills = async () => {
   }
 
   try {
-    await store.dispatch('saveData', { type: 'skills', data: newSkills });
+    await store.dispatch('portfolios/saveData', { type: 'skills', data: newSkills });
     showAIResultDialog.value = false;
     alert("Habilidades substituídas com sucesso pela IA!");
   } catch (error) {
@@ -245,7 +245,7 @@ const saveCategory = async () => {
   const newSkills = { ...currentSkills, [categoryForm.value.name]: { _isEmpty: true } };
 
   try {
-    await store.dispatch('saveData', { type: 'skills', data: newSkills });
+    await store.dispatch('portfolios/saveData', { type: 'skills', data: newSkills });
     closeDialogs();
   } catch (error) {
     console.error('Error saving category:', error);
@@ -258,7 +258,7 @@ const deleteCategory = async (category: string) => {
     const newSkills = JSON.parse(JSON.stringify(skills.value || {}));
     delete newSkills[category];
     try {
-      await store.dispatch('saveData', { type: 'skills', data: newSkills });
+      await store.dispatch('portfolios/saveData', { type: 'skills', data: newSkills });
     } catch (error) {
       console.error('Error deleting category:', error);
       alert('Erro ao excluir categoria.');
@@ -313,7 +313,7 @@ const saveTool = async () => {
   newSkills[category] = tools;
 
   try {
-    await store.dispatch('saveData', { type: 'skills', data: newSkills });
+    await store.dispatch('portfolios/saveData', { type: 'skills', data: newSkills });
     closeDialogs();
   } catch (error) {
     console.error('Error saving tool:', error);
@@ -336,7 +336,7 @@ const deleteTool = async (category: string, toolName: string) => {
       }
 
       try {
-        await store.dispatch('saveData', { type: 'skills', data: newSkills });
+        await store.dispatch('portfolios/saveData', { type: 'skills', data: newSkills });
       } catch (error) {
         console.error('Error deleting tool:', error);
         alert('Erro ao excluir ferramenta.');

@@ -30,7 +30,25 @@ import { useStore } from 'vuex';
 
 const store = useStore();
 
-const skills = computed(() => store.state.skills);
+const skills = computed(() => store.state.portfolios.skills);
+const hasSkills = computed(() => {
+  return store.state.portfolios.skills && Object.keys(store.state.portfolios.skills).length > 0;
+});
+
+// Animação da barra de progresso
+const animateBars = () => {
+  if (store.state.portfolios.skills && Object.keys(store.state.portfolios.skills).length > 0) {
+    nextTick(() => {
+      const progressBars = document.querySelectorAll('.progress');
+      progressBars.forEach(bar => {
+        const width = (bar as HTMLElement).getAttribute('data-width');
+        if (width) {
+          (bar as HTMLElement).style.width = width;
+        }
+      });
+    });
+  }
+};
 
 const animateSkillBars = () => {
   const skillBars = document.querySelectorAll('.skill-progress-bar');

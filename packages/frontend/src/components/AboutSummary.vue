@@ -30,12 +30,12 @@ import { useStore } from 'vuex';
 
 const store = useStore();
 
-const about = computed(() => store.state.about);
-const projects = computed(() => store.state.projects);
-const articles = computed(() => store.state.articles);
-const tutorials = computed(() => store.state.tutorials);
-const skills = computed(() => store.state.skills);
-const experiences = computed(() => store.state.experiences);
+const about = computed(() => store.state.portfolios.about);
+const projects = computed(() => store.state.portfolios.projects);
+const articles = computed(() => store.state.portfolios.articles);
+const tutorials = computed(() => store.state.portfolios.tutorials);
+const skills = computed(() => store.state.portfolios.skills);
+const experiences = computed(() => store.state.portfolios.experiences);
 
 const projectsCount = computed(() => projects.value?.length || 0);
 const skillsCategoriesCount = computed(() => skills.value ? Object.keys(skills.value).length : 0);

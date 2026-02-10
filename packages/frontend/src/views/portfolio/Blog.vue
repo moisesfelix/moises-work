@@ -31,5 +31,5 @@ import { computed } from 'vue';
 import { useStore } from 'vuex';
 
 const store = useStore();
-const articles = computed(() => store.state.articles);
+const articles = computed(() => store.state.portfolios.articles);
 </script>

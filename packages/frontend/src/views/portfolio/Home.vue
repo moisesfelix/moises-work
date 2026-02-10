@@ -83,9 +83,9 @@ import ProjectCard from '@/components/ProjectCard.vue';
 
 const store = useStore();
 
-const about = computed(() => store.state.about);
-const contact = computed(() => store.state.contact);
-const projects = computed(() => store.state.projects);
-const articles = computed(() => store.getters.getLatestArticles(3));
+const about = computed(() => store.state.portfolios.about);
+const contact = computed(() => store.state.portfolios.contact);
+const projects = computed(() => store.state.portfolios.projects);
+const articles = computed(() => store.getters['portfolios/getLatestArticles'](3));
 </script>
 

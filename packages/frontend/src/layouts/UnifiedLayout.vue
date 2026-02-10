@@ -5,7 +5,7 @@ import TheHeader from '../components/TheHeader.vue';
 import TheFooter from '../components/TheFooter.vue';
 
 const store = useStore();
-const isAuthenticated = computed(() => store.getters.isAuthenticated);
+const isAuthenticated = computed(() => store.getters['auth/isAuthenticated']);
 </script>
 
 <template>

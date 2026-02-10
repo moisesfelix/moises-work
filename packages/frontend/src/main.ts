@@ -15,14 +15,14 @@ let app: any;
 const auth = getAuth();
 onAuthStateChanged(auth, (user) => {
   if (user) {
-    store.commit('setUser', user);
+    store.commit('auth/setUser', user);
   } else {
-    store.commit('clearUser');
+    store.commit('auth/clearUser');
   }
 
   if (!app) {
     app = createApp(App)
-    store.dispatch('fetchPortfolioData');
+    store.dispatch('portfolios/fetchPortfolioData');
     app.use(store)
     app.use(router)
     app.mount('#app')

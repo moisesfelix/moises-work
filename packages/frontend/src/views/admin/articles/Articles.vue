@@ -214,8 +214,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { storageService } from '@/services/storage.service';
 
 const store = useStore();
-const articles = computed(() => store.state.articles || []);
-const loading = computed(() => store.state.loading);
+const articles = computed(() => store.state.portfolios.articles || []);
+const loading = computed(() => store.state.ui.isLoading);
 
 const showAIModal = ref(false);
 const showArticleDialog = ref(false);
@@ -248,7 +248,7 @@ const articleForm = ref({
 });
 
 onMounted(() => {
-  store.dispatch('fetchAllData');
+  store.dispatch('portfolios/fetchPortfolioData');
 });
 
 // --- Métodos de Upload de Imagem ---
@@ -307,7 +307,7 @@ const generateArticle = async () => {
     await new Promise(resolve => setTimeout(resolve, 800));
     generatingStatus.value = 'Criando imagem...';
 
-    await store.dispatch('generateArticleWithAI', aiForm.value);
+    await store.dispatch('ai/generateArticleWithAI', aiForm.value);
 
     closeAIModal();
     // Opcional: mostrar toast de sucesso
@@ -366,7 +366,7 @@ const saveArticle = async () => {
   }
 
   // Aqui você chama a action do Vuex para salvar no Firestore/State
-  await store.dispatch('saveData', { type: 'articles', data: updatedArticles });
+  await store.dispatch('portfolios/saveData', { type: 'articles', data: updatedArticles });
   closeArticleDialog();
 };
 
@@ -383,7 +383,7 @@ const handleDeleteArticle = async (article: any) => {
 
     // 2. Deleta o registro do banco
     const updatedArticles = articles.value.filter((a: any) => a.id !== article.id);
-    await store.dispatch('saveData', { type: 'articles', data: updatedArticles });
+    await store.dispatch('portfolios/saveData', { type: 'articles', data: updatedArticles });
   }
 };
 </script>

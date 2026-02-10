@@ -100,8 +100,8 @@ import { storageService } from '@/services/storage.service';
 import { geminiService } from '@/services/gemini.service';
 
 const store = useStore();
-const loading = computed(() => store.state.loading);
-const aboutData = computed(() => store.state.about);
+const loading = computed(() => store.state.ui.isLoading);
+const aboutData = computed(() => store.state.portfolios.about);
 
 const fileInput = ref<HTMLInputElement | null>(null);
 
@@ -120,7 +120,7 @@ const aiPrompt = ref('');
 const generating = ref(false);
 
 onMounted(async () => {
-  await store.dispatch('fetchData', 'about');
+  await store.dispatch('portfolios/fetchData', 'about');
   if (aboutData.value) {
     aboutForm.value = { ...aboutData.value };
   }
@@ -155,7 +155,7 @@ const removeImage = () => {
 const saveAboutData = async () => {
   saving.value = true;
   try {
-    await store.dispatch('saveData', { type: 'about', data: aboutForm.value });
+    await store.dispatch('portfolios/saveData', { type: 'about', data: aboutForm.value });
     // Idealmente, ter um toast de sucesso aqui
     alert('Informações salvas com sucesso!');
   } catch (error) {

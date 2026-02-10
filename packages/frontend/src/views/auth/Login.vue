@@ -33,7 +33,7 @@ export default defineComponent({
 
     const login = async () => {
       try {
-        await store.dispatch('login', { email: email.value, password: password.value });
+        await store.dispatch('auth/login', { email: email.value, password: password.value });
         const redirect = route.query?.redirectedFrom as string || '/admin/dashboard';
         router.push(redirect);
       } catch (error: any) {

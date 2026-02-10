@@ -38,7 +38,7 @@ const filters = [
     { label: 'FullStack', value: 'fullstack' }
 ];
 
-const projects = computed(() => store.state.projects);
+const projects = computed(() => store.state.portfolios.projects);
 
 const filteredProjects = computed(() => {
     if (activeFilter.value === 'all') {

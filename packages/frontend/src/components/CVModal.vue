@@ -97,11 +97,11 @@ const emit = defineEmits<{
 }>();
 
 const store = useStore();
-const about = computed(() => store.state.about);
-const skills = computed(() => store.state.skills);
-const projects = computed(() => store.state.projects);
-const experiences = computed(() => store.state.experiences);
-const contact = computed(() => store.state.contact);
+const about = computed(() => store.state.portfolios.about);
+const skills = computed(() => store.state.portfolios.skills);
+const projects = computed(() => store.state.portfolios.projects);
+const experiences = computed(() => store.state.portfolios.experiences);
+const contact = computed(() => store.state.portfolios.contact);
 
 const generating = ref(false);
 const avatarBase64 = ref<string>('');

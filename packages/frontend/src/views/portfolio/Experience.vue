@@ -25,5 +25,5 @@ import { computed } from 'vue';
 import { useStore } from 'vuex';
 
 const store = useStore();
-const experiences = computed(() => store.state.experiences);
+const experiences = computed(() => store.state.portfolios.experiences);
 </script>

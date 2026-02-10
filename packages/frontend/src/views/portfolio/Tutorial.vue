@@ -78,7 +78,7 @@ const showToast = inject('showToast') as (toast: { type: string; title: string; 
 
 const copiedStepIndex = ref<number | null>(null);
 
-const tutorial = computed(() => store.getters.getTutorialBySlug(route.params.slug as string));
+const tutorial = computed(() => store.getters['portfolios/getTutorialBySlug'](route.params.slug as string));
 
 const copyCode = async (code: string, index: number) => {
     try {

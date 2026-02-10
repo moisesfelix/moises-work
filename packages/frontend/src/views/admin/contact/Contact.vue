@@ -41,7 +41,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
 
 const store = useStore();
-const loading = computed(() => store.state.loading);
+const loading = computed(() => store.state.ui.isLoading);
 
 const contactForm = ref({
   email: '',
@@ -52,14 +52,14 @@ const contactForm = ref({
 });
 
 onMounted(async () => {
-  await store.dispatch('fetchAllData');
-  if (store.state.contact) {
-    contactForm.value = { ...store.state.contact };
+  await store.dispatch('portfolios/fetchPortfolioData');
+  if (store.state.portfolios.contact) {
+    contactForm.value = { ...store.state.portfolios.contact };
   }
 });
 
 const saveContactInfo = async () => {
-  await store.dispatch('saveData', { type: 'contact', data: contactForm.value });
+  await store.dispatch('portfolios/saveData', { type: 'contact', data: contactForm.value });
   alert('Informações de contato salvas com sucesso!');
 };
 </script>

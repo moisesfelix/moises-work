@@ -138,7 +138,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { storageService } from '@/services/storage.service';
 
 const store = useStore();
-const projects = computed(() => store.state.projects);
+const projects = computed(() => store.state.portfolios.projects);
 
 const showProjectDialog = ref(false);
 const editingProject = ref<any>(null);
@@ -160,7 +160,7 @@ const projectForm = ref({
 });
 
 onMounted(() => {
-  store.dispatch('fetchAllData');
+  store.dispatch('portfolios/fetchPortfolioData');
 });
 
 const truncateText = (text: string, length: number) => {
@@ -245,7 +245,7 @@ const saveProject = async () => {
     updatedProjects.push(projectData);
   }
 
-  await store.dispatch('saveData', { type: 'projects', data: updatedProjects });
+  await store.dispatch('portfolios/saveData', { type: 'projects', data: updatedProjects });
   closeProjectDialog();
 };
 
@@ -260,7 +260,7 @@ const deleteProject = async (project: any) => {
     }
 
     const updatedProjects = projects.value.filter((p: any) => p.id !== project.id);
-    await store.dispatch('saveData', { type: 'projects', data: updatedProjects });
+    await store.dispatch('portfolios/saveData', { type: 'projects', data: updatedProjects });
   }
 };
 </script>

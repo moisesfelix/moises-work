@@ -10,11 +10,11 @@ import { useStore } from 'vuex';
 
 const store = useStore();
 
-const isDarkMode = computed(() => store.state.theme.currentTheme === 'dark');
+const isDarkMode = computed(() => store.state.ui.currentTheme === 'dark');
 const nextTheme = computed(() => isDarkMode.value ? 'light' : 'dark');
 
 const toggleTheme = () => {
-  store.dispatch('theme/toggleTheme');
+  store.dispatch('ui/toggleTheme');
 };
 </script>
 

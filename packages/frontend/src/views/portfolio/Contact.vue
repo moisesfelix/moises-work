@@ -86,11 +86,11 @@ import { computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
 
 const store = useStore();
-const loading = computed(() => store.state.loading);
-const contactInfo = computed(() => store.state.contact);
+const loading = computed(() => store.state.ui.isLoading);
+const contactInfo = computed(() => store.state.portfolios.contact);
 
 onMounted(() => {
-  store.dispatch('fetchAllData');
+  store.dispatch('portfolios/fetchPortfolioData');
 });
 </script>
 

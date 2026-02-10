@@ -9,6 +9,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
+  build: {
+    sourcemap: true,
+  },
   optimizeDeps: {
     include: ['firebase/app', 'firebase/database', 'firebase/storage', 'firebase/auth']
   }

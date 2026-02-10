@@ -120,8 +120,8 @@ import { v4 as uuidv4 } from 'uuid';
 import { geminiService } from '@/services/gemini.service';
 
 const store = useStore();
-const experiences = computed(() => store.state.experiences || []);
-const loading = computed(() => store.state.loading);
+const experiences = computed(() => store.state.portfolios.experiences || []);
+const loading = computed(() => store.state.ui.isLoading);
 
 const showExperienceDialog = ref(false);
 const editingExperience = ref<any>(null);
@@ -140,7 +140,7 @@ const experienceForm = ref({
 });
 
 onMounted(() => {
-  store.dispatch('fetchAllData');
+  store.dispatch('portfolios/fetchPortfolioData');
 });
 
 watch(editingExperience, (newVal) => {
@@ -196,14 +196,14 @@ const saveExperience = async () => {
     updatedExperiences.push(formData);
   }
 
-  await store.dispatch('saveData', { type: 'experiences', data: updatedExperiences });
+  await store.dispatch('portfolios/saveData', { type: 'experiences', data: updatedExperiences });
   closeExperienceDialog();
 };
 
 const handleDeleteExperience = async (exp: any) => {
   if (confirm(`Excluir a experiência "${exp.title}"?`)) {
     const updatedExperiences = experiences.value.filter((e: any) => e.id !== exp.id);
-    await store.dispatch('saveData', { type: 'experiences', data: updatedExperiences });
+    await store.dispatch('portfolios/saveData', { type: 'experiences', data: updatedExperiences });
   }
 };
 
