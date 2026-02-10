@@ -25,3 +25,6 @@ output.txt
 # Environment variables
 .env
 .env*.todo
+
+# Continue
+.continue/
