@@ -20,6 +20,22 @@
                     </ul>
                 </nav>
                 <ThemeSwitcher />
+                <div v-if="isLoggedIn" class="admin-menu">
+                    <button @click="toggleAdminDropdown" class="avatar-btn">
+                        <img :src="user?.photoURL || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp'" alt="User Avatar" class="avatar">
+                    </button>
+                    <ul v-if="adminDropdownActive" class="admin-dropdown">
+                        <li><router-link to="/admin/dashboard" @click="closeAdminDropdown"><i class="fas fa-tachometer-alt"></i> Dashboard</router-link></li>
+                        <li><router-link to="/admin/about" @click="closeAdminDropdown"><i class="fas fa-user"></i> Sobre</router-link></li>
+                        <li><router-link to="/admin/projects" @click="closeAdminDropdown"><i class="fas fa-project-diagram"></i> Projetos</router-link></li>
+                        <li><router-link to="/admin/articles" @click="closeAdminDropdown"><i class="fas fa-newspaper"></i> Artigos</router-link></li>
+                        <li><router-link to="/admin/tutorials" @click="closeAdminDropdown"><i class="fas fa-book-open"></i> Tutoriais</router-link></li>
+                        <li><router-link to="/admin/experiences" @click="closeAdminDropdown"><i class="fas fa-briefcase"></i> Experiências</router-link></li>
+                        <li><router-link to="/admin/skills" @click="closeAdminDropdown"><i class="fas fa-cogs"></i> Habilidades</router-link></li>
+                        <li><router-link to="/admin/contact" @click="closeAdminDropdown"><i class="fas fa-envelope"></i> Contato</router-link></li>
+                        <li><a @click="logout"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
+                    </ul>
+                </div>
                 <button class="mobile-menu-btn" @click="toggleMobileMenu" aria-label="Menu">
                     <i :class="mobileMenuIcon"></i>
                 </button>
@@ -29,11 +45,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
+import type { User } from 'firebase/auth';
 import ThemeSwitcher from './ThemeSwitcher.vue';
+import { useRouter } from 'vue-router';
 
 const mobileMenuActive = ref(false);
+const adminDropdownActive = ref(false);
+const isLoggedIn = ref(false);
+const user = ref<User | null>(null);
 const mobileMenuIcon = computed(() => mobileMenuActive.value ? 'fas fa-times' : 'fas fa-bars');
+const auth = getAuth();
+const router = useRouter();
+
+onMounted(() => {
+    onAuthStateChanged(auth, (currentUser) => {
+        isLoggedIn.value = !!currentUser;
+        user.value = currentUser;
+    });
+});
 
 const toggleMobileMenu = () => {
     mobileMenuActive.value = !mobileMenuActive.value;
@@ -44,7 +75,22 @@ const closeMobileMenu = () => {
     mobileMenuActive.value = false;
     document.body.style.overflow = 'auto';
 };
+
+const toggleAdminDropdown = () => {
+    adminDropdownActive.value = !adminDropdownActive.value;
+};
+
+const closeAdminDropdown = () => {
+    adminDropdownActive.value = false;
+};
+
+const logout = async () => {
+  await signOut(auth);
+  closeAdminDropdown();
+  router.push('/');
+};
 </script>
+
 
 <style scoped>
 header {
@@ -58,6 +104,9 @@ header {
     padding: 1rem 0;
     border-bottom: var(--border-header);
     transition: background-color 0.3s ease, border-bottom 0.3s ease;
+    min-height: var(--header-height);
+    display: flex;
+    align-items: center;
 }
 
 .header-container {
@@ -118,6 +167,7 @@ nav ul li a.router-link-active {
     color: var(--primary);
 }
 
+
 @media (max-width: 992px) {
     .mobile-menu-btn {
         display: block;
@@ -152,5 +202,51 @@ nav ul li a.router-link-active {
     nav ul li a {
         font-size: 1.2rem;
     }
+}
+.admin-menu {
+    position: relative;
+}
+
+.avatar-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    border-radius: 50%;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.admin-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--background-body);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    list-style: none;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+    min-width: 200px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.admin-dropdown li a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.5rem 1rem;
+    color: var(--text-color-body);
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.admin-dropdown li a:hover {
+    background-color: var(--background-secondary);
 }
 </style>

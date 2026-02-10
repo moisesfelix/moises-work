@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "admin": "file:packages/admin",
-    "sass": "^1.97.3"
+    "sass": "^1.97.3",
+    "uuid": "^13.0.0"
   }
 }
