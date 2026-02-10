@@ -4,16 +4,16 @@ import { getAuth } from 'firebase/auth';
 import UnifiedLayout from '@/layouts/UnifiedLayout.vue';
 
 // Public Views
-import Home from '@/views/Home.vue';
-import About from '@/views/About.vue';
-import Experience from '@/views/Experience.vue';
-import Skills from '@/views/Skills.vue';
-import Portfolio from '@/views/Portfolio.vue';
-import Blog from '@/views/Blog.vue';
-import Article from '@/views/Article.vue';
-import PublicTutorials from '@/views/Tutorials.vue';
-import Tutorial from '@/views/Tutorial.vue';
-import Contact from '@/views/Contact.vue';
+import Home from '@/views/portfolio/Home.vue';
+import About from '@/views/portfolio/About.vue';
+import Experience from '@/views/portfolio/Experience.vue';
+import Skills from '@/views/portfolio/Skills.vue';
+import Portfolio from '@/views/portfolio/Portfolio.vue';
+import Blog from '@/views/portfolio/Blog.vue';
+import Article from '@/views/portfolio/Article.vue';
+import PublicTutorials from '@/views/portfolio/Tutorials.vue';
+import Tutorial from '@/views/portfolio/Tutorial.vue';
+import Contact from '@/views/portfolio/Contact.vue';
 
 // Admin Views
 import Login from '@/views/auth/Login.vue';
