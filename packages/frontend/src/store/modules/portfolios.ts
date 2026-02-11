@@ -2,7 +2,7 @@
 import type { Module } from 'vuex';
 import type { Project, Article, Tutorial, Experience } from 'shared';
 import { db } from '@/firebase/config';
-import { ref, get, set, remove, push, serverTimestamp } from 'firebase/database';
+import { ref, get, set, remove, push, serverTimestamp, update } from 'firebase/database';
 import { kebabCase } from '@/utils/slug';
 
 interface PortfolioState {
@@ -68,73 +68,92 @@ const portfoliosModule: Module<PortfolioState, any> = {
   },
   actions: {
     /**
-     * Initializes the user's portfolio upon login.
-     * Ensures the user has a portfolio in 'portfolios_meta' and 'users/{uid}/portfolios'.
-     * Sets the activePortfolioId.
+     * Inicializa o portfólio do usuário com consistência ATÔMICA.
+     * Ou grava tudo (Meta, Content, Slug, UserLink), ou não grava nada.
      */
     async initializeUserPortfolio({ commit, rootState }) {
         const uid = rootState.auth.user?.uid;
         if (!uid) return;
 
         commit('ui/setLoading', true, { root: true });
+        
         try {
-            // Check if user has any portfolios
+            // 1. Verifica se já existe (Leitura rápida no índice do usuário)
             const userPortfoliosRef = ref(db, `users/${uid}/portfolios`);
-            let snapshot = await get(userPortfoliosRef);
-            let portfolios = snapshot.val();
+            const snapshot = await get(userPortfoliosRef);
+            
             let portfolioId: string | null = null;
             let isNew = false;
 
-            if (portfolios) {
-                // Get the first portfolio ID found
-                portfolioId = Object.keys(portfolios)[0];
+            if (snapshot.exists()) {
+                // Usuário já tem portfólio, pega o primeiro ID
+                portfolioId = Object.keys(snapshot.val())[0];
             } else {
-                // Create new portfolio
-                // 1. Generate ID
-                const newPortfolioRef = push(ref(db, 'portfolios_meta'));
-                portfolioId = newPortfolioRef.key!;
+                // --- CRIAÇÃO DO ZERO (ATOMIC WAY) ---
+                isNew = true;
                 
-                const title = "Meu Novo Portfólio";
-                const slugBase = kebabCase(rootState.auth.user.displayName || 'portfolio');
-                // Simple unique check could go here, but for now assuming unique or appending ID
-                const slug = `${slugBase}-${portfolioId.substring(0,4)}`;
+                // A. Gera o ID no cliente (sem ir ao banco ainda)
+                portfolioId = push(ref(db, 'portfolios_meta')).key!;
+                
+                // B. Prepara dados auxiliares
+                const title = rootState.auth.user.displayName || "Meu Portfólio";
+                const slugBase = kebabCase(title);
+                // Adiciona sufixo aleatório para garantir unicidade do slug sem leitura prévia pesada
+                const uniqueSlug = `${slugBase}-${portfolioId.substring(portfolioId.length - 4)}`;
 
-                // 2. Create Meta
-                await set(newPortfolioRef, {
+                // C. O PACOTE ATÔMICO (O segredo do Sênior)
+                const updates: Record<string, any> = {};
+
+                // 1. Tabela de Metadados (Leitura rápida p/ Dashboard)
+                updates[`/portfolios_meta/${portfolioId}`] = {
                     title: title,
-                    slug: slug,
+                    slug: uniqueSlug,
                     ownerUid: uid,
                     thumbnail: "",
                     createdAt: serverTimestamp()
-                });
+                };
 
-                // 3. Create Content
-                await set(ref(db, `portfolios_content/${portfolioId}`), {
-                    about: { title: title, description: 'Configure seu portfólio no admin.' },
-                    contact: { email: rootState.auth.user.email }
-                });
+                // 2. Tabela de Conteúdo (Dados pesados, lazy loaded)
+                updates[`/portfolios_content/${portfolioId}`] = {
+                    about: { 
+                        title: `Olá, sou ${title}`, 
+                        description: 'Este portfólio foi gerado automaticamente com arquitetura escalável.' 
+                    },
+                    contact: { email: rootState.auth.user.email },
+                    projects: [],
+                    articles: [],
+                    skills: {},
+                    experiences: []
+                };
 
-                // 4. Link to User
-                await set(ref(db, `users/${uid}/portfolios/${portfolioId}`), true);
-                
-                // 5. Link Slug
-                await set(ref(db, `slugs/${slug}`), portfolioId);
+                // 3. Índice Invertido (User -> Portfolios)
+                updates[`/users/${uid}/portfolios/${portfolioId}`] = true;
 
-                isNew = true;
+                // 4. DNS Interno (Slug -> ID)
+                updates[`/slugs/${uniqueSlug}`] = portfolioId;
+
+                // D. DISPARO ÚNICO
+                // Se a internet cair aqui, o Firebase garante integridade.
+                await update(ref(db), updates);
             }
 
+            // Define como ativo na sessão
             commit('setActivePortfolioId', portfolioId);
             
-            // Fetch Content
+            // Busca o conteúdo atualizado para mostrar na tela
+            // (Poderíamos otimizar usando o objeto local se isNew=true, mas fetch garante sync)
             const contentRef = ref(db, `portfolios_content/${portfolioId}`);
             const contentSnap = await get(contentRef);
-            commit('setPortfolioData', contentSnap.val() || {});
+            
+            if (contentSnap.exists()) {
+                commit('setPortfolioData', contentSnap.val());
+            }
 
-            return { isNew };
+            return { isNew, portfolioId };
 
         } catch (error: any) {
-            console.error("Init portfolio error:", error);
-            commit('ui/setError', error.message, { root: true });
+            console.error("Critical Error initializing portfolio:", error);
+            commit('ui/setError', "Falha crítica ao criar ambiente: " + error.message, { root: true });
         } finally {
             commit('ui/setLoading', false, { root: true });
         }
