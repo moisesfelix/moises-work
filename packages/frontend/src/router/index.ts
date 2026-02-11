@@ -2,8 +2,10 @@ import { createRouter, createWebHistory } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
 import { getAuth } from 'firebase/auth';
 import UnifiedLayout from '@/layouts/UnifiedLayout.vue';
+import PortfolioLayout from '@/layouts/PortfolioLayout.vue';
+import LandingPage from '@/views/LandingPage.vue';
 
-// Public Views
+// Public Views (Portfolio Specific)
 import Home from '@/views/portfolio/Home.vue';
 import About from '@/views/portfolio/About.vue';
 import Experience from '@/views/portfolio/Experience.vue';
@@ -29,30 +31,28 @@ import AdminContact from '@/views/admin/contact/Contact.vue';
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
-    component: UnifiedLayout, // Use UnifiedLayout as the parent
-    children: [
-      // Public Routes
-      { path: '', component: Home, name: 'Home' },
-      { path: 'sobre', component: About, name: 'About' },
-      { path: 'experiencia', component: Experience, name: 'Experience' },
-      { path: 'habilidades', component: Skills, name: 'Skills' },
-      { path: 'portfolio', component: Portfolio, name: 'Portfolio' },
-      { path: 'blog', component: Blog, name: 'Blog' },
-      { path: 'artigo/:slug', component: Article, name: 'Article' },
-      { path: 'tutoriais', component: PublicTutorials, name: 'PublicTutorials' },
-      { path: 'tutorial/:slug', component: Tutorial, name: 'Tutorial' },
-      { path: 'contato', component: Contact, name: 'Contact' },
-      { 
-        path: '/login',
-        name: 'Login',
-        component: Login,
-        meta: { requiresAuth: false }
+    component: LandingPage,
+    name: 'LandingPage'
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: Login,
+    meta: { requiresAuth: false },
+    beforeEnter: async (to, from, next) => {
+      const auth = getAuth();
+      const user = auth.currentUser;
+      if (user) {
+        // Already logged in, redirect to admin dashboard
+        next('/admin/dashboard');
+      } else {
+        next(); // Proceed to login page
       }
-    ]
+    }
   },
   {
     path: '/admin',
-    component: UnifiedLayout, // Use UnifiedLayout as the parent
+    component: UnifiedLayout,
     meta: { requiresAuth: true },
     children: [
       {
@@ -108,6 +108,23 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: 'Contato' }
       }
     ]
+  },
+  // Portfolio Routes (Dynamic Slug)
+  {
+    path: '/:slug',
+    component: PortfolioLayout,
+    children: [
+      { path: '', component: Home, name: 'PortfolioHome' },
+      { path: 'sobre', component: About, name: 'PortfolioAbout' },
+      { path: 'experiencia', component: Experience, name: 'PortfolioExperience' },
+      { path: 'habilidades', component: Skills, name: 'PortfolioSkills' },
+      { path: 'projetos', component: Portfolio, name: 'PortfolioProjects' }, // Renamed from 'portfolio' to 'projetos'
+      { path: 'blog', component: Blog, name: 'PortfolioBlog' },
+      { path: 'artigo/:articleSlug', component: Article, name: 'PortfolioArticle' },
+      { path: 'tutoriais', component: PublicTutorials, name: 'PortfolioTutorials' },
+      { path: 'tutorial/:tutorialSlug', component: Tutorial, name: 'PortfolioTutorial' },
+      { path: 'contato', component: Contact, name: 'PortfolioContact' },
+    ]
   }
 ]
 
@@ -126,7 +143,7 @@ const router = createRouter({
 // Navigation guard
 router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-  
+
   if (requiresAuth) {
     const auth = getAuth();
     const user = auth.currentUser; // Get the current user synchronously

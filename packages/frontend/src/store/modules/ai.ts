@@ -7,7 +7,7 @@ import type { Article } from 'shared';
 const aiModule: Module<any, any> = {
   namespaced: true,
   actions: {
-    async generateArticleWithAI({ state, dispatch, commit }, request) {
+    async generateArticleWithAI({ dispatch, commit, rootState }, request) {
       commit('ui/setLoading', true, { root: true });
       commit('ui/setError', null, { root: true });
 
@@ -39,7 +39,7 @@ const aiModule: Module<any, any> = {
           }),
         };
 
-        const currentArticles = state.portfolios.articles || [];
+        const currentArticles = rootState.portfolios.articles || [];
         const updatedArticles = [...currentArticles, articleData];
         await dispatch('portfolios/saveData', { type: 'articles', data: updatedArticles }, { root: true });
 
@@ -52,7 +52,7 @@ const aiModule: Module<any, any> = {
       }
     },
 
-    async generateTutorialWithAI({ state, dispatch, commit }, request) {
+    async generateTutorialWithAI({ dispatch, commit, rootState }, request) {
       commit('ui/setLoading', true, { root: true });
       commit('ui/setError', null, { root: true });
 
@@ -74,7 +74,8 @@ const aiModule: Module<any, any> = {
           date: new Date().toISOString()
         };
 
-        const currentTutorials = state.portfolios.tutorials || [];
+        // Access rootState
+        const currentTutorials = rootState.portfolios.tutorials || [];
         const updatedTutorials = [...currentTutorials, tutorialData];
         await dispatch('portfolios/saveData', { type: 'tutorials', data: updatedTutorials }, { root: true });
 

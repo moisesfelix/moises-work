@@ -2,49 +2,47 @@
   <div class="login-container">
     <div class="login-box">
       <h2>Admin Login</h2>
-      <form @submit.prevent="login">
-        <div class="input-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" v-model="email" required>
-        </div>
-        <div class="input-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" v-model="password" required>
-        </div>
-        <button type="submit">Login</button>
-      </form>
+      <p>Entre com sua conta Google para gerenciar seu portfólio.</p>
+      <button @click="handleGoogleLogin" class="google-btn">
+        <i class="fab fa-google"></i> Entrar com Google
+      </button>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 
 export default defineComponent({
   name: 'Login',
   setup() {
-    const email = ref('');
-    const password = ref('');
     const router = useRouter();
     const route = useRoute();
     const store = useStore();
 
-    const login = async () => {
+    const handleGoogleLogin = async () => {
       try {
-        await store.dispatch('auth/login', { email: email.value, password: password.value });
-        const redirect = route.query?.redirectedFrom as string || '/admin/dashboard';
+        await store.dispatch('auth/loginWithGoogle');
+        // Check if user has a portfolio, if not create/assign one
+        const result = await store.dispatch('portfolios/initializeUserPortfolio');
+        
+        let redirect = route.query?.redirectedFrom as string || '/admin/dashboard';
+        
+        // If it's a new portfolio, redirect to About page to setup profile
+        if (result && result.isNew) {
+            redirect = '/admin/about';
+        }
+        
         router.push(redirect);
       } catch (error: any) {
-        alert('Failed to login: ' + error.message);
+        alert('Falha no login: ' + error.message);
       }
     };
 
     return {
-      email,
-      password,
-      login,
+      handleGoogleLogin,
     };
   },
 });
@@ -55,34 +53,43 @@ export default defineComponent({
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f0f2f5;
+  min-height: calc(100vh - 100px); /* Adjust based on header/footer */
+  background-color: var(--background-body);
 }
 .login-box {
-  background: white;
-  padding: 2rem;
+  background: var(--background-secondary);
+  padding: 3rem;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
 }
-.input-group {
+h2 {
   margin-bottom: 1rem;
+  color: var(--text-color-heading);
 }
-label {
-  display: block;
-  margin-bottom: 0.5rem;
+p {
+  margin-bottom: 2rem;
+  color: var(--text-color-body);
 }
-input {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-button {
+.google-btn {
   width: 100%;
   padding: 0.75rem;
-  background-color: #007bff;
+  background-color: #DB4437;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: opacity 0.2s;
+  font-size: 1rem;
+}
+.google-btn:hover {
+  opacity: 0.9;
 }
 </style>

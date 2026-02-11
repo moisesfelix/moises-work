@@ -44,7 +44,7 @@
               </div>
               
               <div class="article-footer">
-                  <router-link to="/blog" class="btn btn-back">
+                  <router-link :to="`/${route.params.slug}/blog`" class="btn btn-back">
                       <i class="fas fa-arrow-left"></i> Voltar para Artigos
                   </router-link>
               </div>
@@ -53,7 +53,7 @@
           <div v-else class="not-found">
               <i class="fas fa-file-alt" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
               <p>Artigo não encontrado.</p>
-              <router-link to="/blog" class="btn btn-back">Voltar</router-link>
+              <router-link :to="`/${route.params.slug}/blog`" class="btn btn-back">Voltar</router-link>
           </div>
       </div>
   </div>
@@ -72,7 +72,7 @@ const showToast = inject('showToast') as (toast: { type: string; title: string; 
 
 const copiedIndex = ref<number | null>(null);
 
-const article = computed(() => store.getters['portfolios/getArticleBySlug'](route.params.slug as string));
+const article = computed(() => store.getters['portfolios/getArticleBySlug'](route.params.articleSlug as string));
 
 const copyCode = async (code: string, index: number) => {
     try {

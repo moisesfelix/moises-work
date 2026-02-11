@@ -39,7 +39,7 @@
               </div>
               
               <div style="text-align: center; margin-top: 50px;">
-                  <router-link to="/portfolio" class="btn">
+                  <router-link :to="`/${currentSlug}/projetos`" class="btn">
                       <i class="fas fa-th-list"></i> Ver Todos os Projetos
                   </router-link>
               </div>
@@ -64,7 +64,7 @@
                           </div>
                           <h3>{{ article.title }}</h3>
                           <p>{{ article.excerpt }}</p>
-                          <router-link :to="'/artigo/' + article.slug" class="btn" style="margin-top: 20px; padding: 10px 25px;">
+                          <router-link :to="`/${currentSlug}/artigo/${article.slug}`" class="btn" style="margin-top: 20px; padding: 10px 25px;">
                               <i class="fas fa-book-open"></i> Ler Artigo
                           </router-link>
                       </div>
@@ -76,16 +76,28 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
+import { useRoute } from 'vue-router';
 import AboutSummary from '@/components/AboutSummary.vue';
 import ProjectCard from '@/components/ProjectCard.vue';
 
 const store = useStore();
+const route = useRoute();
+
+const currentSlug = computed(() => route.params.slug);
+
+// No longer try to fetch data on mount if we assume PortfolioLayout or parent handles it, or if it is reactive
+// However, if we need to support direct access, we might check if data exists.
+// But PortfolioLayout already calls fetchPortfolioData with slug.
 
 const about = computed(() => store.state.portfolios.about);
 const contact = computed(() => store.state.portfolios.contact);
-const projects = computed(() => store.state.portfolios.projects);
-const articles = computed(() => store.getters['portfolios/getLatestArticles'](3));
+const projects = computed(() => store.state.portfolios.projects || []);
+// Using state directly for now as getters might need refinement for array structure
+const articles = computed(() => {
+    const arts = store.state.portfolios.articles || [];
+    return [...arts].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 3);
+});
 </script>
 

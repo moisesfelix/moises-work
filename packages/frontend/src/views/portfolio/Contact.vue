@@ -26,7 +26,7 @@
 
         <!-- WhatsApp Card -->
         <a v-if="contactInfo.whatsapp" :href="contactInfo.whatsapp" target="_blank" rel="noopener noreferrer" class="contact-card whatsapp">
-          <div class="icon-wrapper">
+          <div class="icon-wrapper">CContactontact
             <i class="fab fa-whatsapp"></i>
           </div>
           <div class="card-content">
@@ -89,9 +89,7 @@ const store = useStore();
 const loading = computed(() => store.state.ui.isLoading);
 const contactInfo = computed(() => store.state.portfolios.contact);
 
-onMounted(() => {
-  store.dispatch('portfolios/fetchPortfolioData');
-});
+
 </script>
 
 <style scoped>

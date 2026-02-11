@@ -1,28 +1,43 @@
 <template>
     <header>
         <div class="container header-container">
-            <router-link to="/" class="logo">
+            <!-- Logo dynamically links to home or slug home -->
+            <router-link :to="slug ? `/${slug}` : '/'" class="logo">
                 <i class="fas fa-code"></i>
-                moises.work
+
+                <span v-if="slug && portfolioTitle">{{ portfolioTitle }}</span>
+                <span v-else>moises.work</span>
             </router-link>
             
             <div class="nav-wrapper">
                 <nav :class="{ active: mobileMenuActive }">
-                    <ul>
-                        <li><router-link to="/" @click="closeMobileMenu"><i class="fas fa-home"></i> Início</router-link></li>
-                        <li><router-link to="/sobre" @click="closeMobileMenu"><i class="fas fa-user"></i> Sobre</router-link></li>
-                        <li><router-link to="/experiencia" @click="closeMobileMenu"><i class="fas fa-briefcase"></i> Experiência</router-link></li>
-                        <li><router-link to="/habilidades" @click="closeMobileMenu"><i class="fas fa-cogs"></i> Habilidades</router-link></li>
-                        <li><router-link to="/portfolio" @click="closeMobileMenu"><i class="fas fa-folder-open"></i> Portfólio</router-link></li>
-                        <li><router-link to="/blog" @click="closeMobileMenu"><i class="fas fa-newspaper"></i> Blog</router-link></li>
-                        <li><router-link to="/tutoriais" @click="closeMobileMenu"><i class="fas fa-book-open"></i> Tutoriais</router-link></li>
-                        <li><router-link to="/contato" @click="closeMobileMenu"><i class="fas fa-envelope"></i> Contato</router-link></li>
+                    <ul v-if="slug">
+                        <!-- Navigation for the current portfolio being viewed -->
+                        <li><router-link :to="`/${slug}`" @click="closeMobileMenu"><i class="fas fa-home"></i> Início</router-link></li>
+                        <li><router-link :to="`/${slug}/sobre`" @click="closeMobileMenu"><i class="fas fa-user"></i> Sobre</router-link></li>
+                        <li><router-link :to="`/${slug}/experiencia`" @click="closeMobileMenu"><i class="fas fa-briefcase"></i> Experiência</router-link></li>
+                        <li><router-link :to="`/${slug}/habilidades`" @click="closeMobileMenu"><i class="fas fa-cogs"></i> Habilidades</router-link></li>
+                        <li><router-link :to="`/${slug}/projetos`" @click="closeMobileMenu"><i class="fas fa-folder-open"></i> Projetos</router-link></li>
+                        <li><router-link :to="`/${slug}/blog`" @click="closeMobileMenu"><i class="fas fa-newspaper"></i> Blog</router-link></li>
+                        <li><router-link :to="`/${slug}/tutoriais`" @click="closeMobileMenu"><i class="fas fa-book-open"></i> Tutoriais</router-link></li>
+                        <li><router-link :to="`/${slug}/contato`" @click="closeMobileMenu"><i class="fas fa-envelope"></i> Contato</router-link></li>
+                        
+                        <!-- If user is not logged in, show login link even inside a portfolio -->
+                         <li v-if="!isLoggedIn"><router-link to="/login" @click="closeMobileMenu"><i class="fab fa-google"></i> Login</router-link></li>
+                    </ul>
+                     <ul v-else>
+                         <!-- Default Navigation for Landing Page or non-slug pages -->
+                         <li><router-link to="/" @click="closeMobileMenu"><i class="fas fa-home"></i> Início</router-link></li>
+                        <li v-if="!isLoggedIn"><router-link to="/login" @click="closeMobileMenu"><i class="fab fa-google"></i> Login</router-link></li>
                     </ul>
                 </nav>
                 <ThemeSwitcher />
+                
+                <!-- Admin Menu (Avatar) - Only for logged in users to manage THEIR portfolio -->
                 <div v-if="isLoggedIn" class="admin-menu">
                     <button @click="toggleAdminDropdown" class="avatar-btn">
-                        <img :src="user?.photoURL || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp'" alt="User Avatar" class="avatar">
+                        <img v-if="user?.photoURL" :src="user.photoURL" alt="User Avatar" class="avatar">
+                        <i v-else class="fas fa-user-circle avatar-placeholder"></i>
                     </button>
                     <ul v-if="adminDropdownActive" class="admin-dropdown">
                         <li><router-link to="/admin/dashboard" @click="closeAdminDropdown"><i class="fas fa-tachometer-alt"></i> Dashboard</router-link></li>
@@ -36,7 +51,11 @@
                         <li><a @click="logout"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
                     </ul>
                 </div>
-                <button class="mobile-menu-btn" @click="toggleMobileMenu" aria-label="Menu">
+                <!-- Login Button - Only for logged out users (when avatar is hidden) -->
+                <div v-else class="login-menu">
+                    <router-link to="/login" class="btn btn-outline"><i class="fab fa-google"></i> Entrar</router-link>
+                </div>
+                <button class="mobile-menu-btn" @click="toggleMobileMenu" aria-label="Menu" v-if="slug">
                     <i :class="mobileMenuIcon"></i>
                 </button>
             </div>
@@ -49,7 +68,8 @@ import { ref, computed, onMounted } from 'vue';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import ThemeSwitcher from './ThemeSwitcher.vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
+import { useStore } from 'vuex';
 
 const mobileMenuActive = ref(false);
 const adminDropdownActive = ref(false);
@@ -58,6 +78,18 @@ const user = ref<User | null>(null);
 const mobileMenuIcon = computed(() => mobileMenuActive.value ? 'fas fa-times' : 'fas fa-bars');
 const auth = getAuth();
 const router = useRouter();
+const route = useRoute();
+const store = useStore();
+
+const slug = computed(() => {
+    // Basic check to see if we are in a portfolio route
+    return route.params.slug as string;
+});
+
+const portfolioTitle = computed(() => {
+    // If we are viewing a portfolio, show its title/owner name instead of generic logo if available
+    return store.state.portfolios.about?.title || 'Meu Portfólio';
+});
 
 onMounted(() => {
     onAuthStateChanged(auth, (currentUser) => {
@@ -136,7 +168,8 @@ header {
 }
 
 .mobile-menu-btn {
-    display: none;
+
+    display: none; /* Hidden by default */
     background: none;
     border: none;
     color: var(--text-color-heading);
@@ -145,63 +178,76 @@ header {
     z-index: 1001;
 }
 
-nav ul {
+
+
+
+
+.nav-wrapper:has(nav) .mobile-menu-btn {
+    display: block; /* Show only if nav exists (i.e. slug is present) */
+}
+
+/* Ensure btn-outline style is present if not global */
+.btn-outline {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
     display: flex;
-    list-style: none;
+    align-items: center;
+    gap: 8px;
+}
+.btn-outline:hover {
+    background-color: var(--primary);
+    color: white;
+}
+
+/* Ensure admin dropdown links are visible inside dropdown */
+.admin-dropdown li a {
+    display: flex;
+}
+
+/* Sidebar Navigation Styles (Mobile Menu Logic applied generally) */
+nav {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
+    background: var(--background-body);
+    padding: 6rem 2rem 2rem;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: -5px 0 20px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+    z-index: 999;
+}
+
+nav.active {
+    right: 0;
+}
+
+nav ul {
+    /* Show nav list only inside the sidebar */
+    display: flex;
+    flex-direction: column;
     gap: 1.5rem;
+    text-align: center;
+    width: 100%;
 }
 
 nav ul li a {
-    font-weight: 500;
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--text-color-body);
-    text-decoration: none;
-    transition: color 0.2s;
+    font-size: 1.2rem;
+    display: block;
+    padding: 10px;
 }
-
-nav ul li a:hover,
-nav ul li a.router-link-active {
-    color: var(--primary);
-}
-
 
 @media (max-width: 992px) {
-    .mobile-menu-btn {
-        display: block;
-    }
-    
-    nav {
-        position: fixed;
-        top: 0;
-        right: -100%;
-        width: 80%;
-        max-width: 300px;
-        height: 100vh;
-        background: var(--background-body);
-        padding: 6rem 2rem 2rem;
-        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: -5px 0 20px rgba(0,0,0,0.1);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    nav.active {
-        right: 0;
-    }
-    
-    nav ul {
-        flex-direction: column;
-        gap: 1.5rem;
-        text-align: center;
-    }
-
-    nav ul li a {
-        font-size: 1.2rem;
-    }
+    /* Styles are now unified for all sizes as per request */
 }
 .admin-menu {
     position: relative;
@@ -220,6 +266,18 @@ nav ul li a.router-link-active {
     height: 40px;
     border-radius: 50%;
     object-fit: cover;
+}
+
+.avatar-placeholder {
+    font-size: 40px;
+    color: var(--text-color-body);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: var(--background-secondary);
 }
 
 .admin-dropdown {

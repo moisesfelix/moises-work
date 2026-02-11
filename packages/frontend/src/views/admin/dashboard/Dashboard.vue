@@ -6,17 +6,30 @@
     </div>
     <div class="card">
       <div class="card-content">
-        <p>Bem-vindo ao painel de administração!</p>
+        <p>Bem-vindo ao painel de administração, <strong>{{ userName }}</strong>!</p>
+        <p v-if="portfolioId">Seu portfólio está ativo (ID: {{ portfolioId }}).</p>
+        <p v-else>Inicializando seu portfólio...</p>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, computed } from 'vue';
+import { useStore } from 'vuex';
 
 export default defineComponent({
-  name: 'Dashboard'
+  name: 'Dashboard',
+  setup() {
+    const store = useStore();
+    const userName = computed(() => store.state.auth.user?.displayName || 'Usuário');
+    const portfolioId = computed(() => store.state.portfolios.activePortfolioId);
+
+    return {
+      userName,
+      portfolioId
+    }
+  }
 });
 </script>
 

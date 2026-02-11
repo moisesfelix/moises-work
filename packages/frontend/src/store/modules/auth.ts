@@ -1,6 +1,7 @@
-
 import type { Module } from 'vuex';
-import { getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { db } from '@/firebase/config';
+import { ref, get, set, serverTimestamp } from 'firebase/database';
 
 interface AuthState {
   user: any | null;
@@ -20,14 +21,29 @@ const authModule: Module<AuthState, any> = {
     },
   },
   actions: {
-    async login({ commit }, { email, password }) {
+    async loginWithGoogle({ commit }) {
       commit('ui/setLoading', true, { root: true });
       commit('ui/setError', null, { root: true });
 
       try {
         const auth = getAuth();
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const provider = new GoogleAuthProvider();
+        const userCredential = await signInWithPopup(auth, provider);
         const user = userCredential.user;
+        
+        // Create user record in DB if not exists
+        const userRef = ref(db, `users/${user.uid}`);
+        const userSnap = await get(userRef);
+        
+        if (!userSnap.exists()) {
+          await set(userRef, {
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            createdAt: serverTimestamp()
+          });
+        }
+        
         commit('setUser', user);
         return user;
       } catch (error: any) {
