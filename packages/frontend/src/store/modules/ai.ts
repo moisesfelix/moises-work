@@ -1,6 +1,6 @@
-
 import type { Module } from 'vuex';
 import { geminiService } from '@/services/gemini.service';
+import { apiGeminiService } from '@/services/api.gemini.service';
 import { storageService } from '@/services/storage.service';
 import type { Article } from 'shared';
 
@@ -12,7 +12,7 @@ const aiModule: Module<any, any> = {
       commit('ui/setError', null, { root: true });
 
       try {
-        const generatedArticle = await geminiService.generateArticle(request);
+        const generatedArticle = await apiGeminiService.generateArticle(request);
         let imageUrl = 'https://via.placeholder.com/600x400';
         try {
           const imagePrompts = [generatedArticle.makeImagePrompt];
@@ -57,7 +57,7 @@ const aiModule: Module<any, any> = {
       commit('ui/setError', null, { root: true });
 
       try {
-        const generatedTutorial = await geminiService.generateTutorial(request);
+        const generatedTutorial = await apiGeminiService.generateTutorial(request);
         let imageUrl = '';
         if (generatedTutorial.makeImagePrompt) {
           const urls = await storageService.uploadMultipleImages(

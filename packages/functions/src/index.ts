@@ -1,4 +1,7 @@
-import * as functions from 'firebase-functions';
+import { onRequest } from 'firebase-functions/v2/https';
+import { defineSecret } from 'firebase-functions/params';
 import app from './api';
 
-export const api = functions.https.onRequest(app);
+const geminiApiKey = defineSecret('GEMINI_KEY');
+
+export const api = onRequest({ secrets: [geminiApiKey] }, app);

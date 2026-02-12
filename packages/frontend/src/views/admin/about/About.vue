@@ -97,7 +97,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { storageService } from '@/services/storage.service';
-import { geminiService } from '@/services/gemini.service';
+import { apiGeminiService } from '@/services/api.gemini.service';
 
 const store = useStore();
 const loading = computed(() => store.state.ui.isLoading);
@@ -185,7 +185,7 @@ const generateAIDescription = async () => {
   generating.value = true;
   try {
     const prompt = `Com base nestes pontos: "${aiPrompt.value}", gere uma descrição profissional e atrativa para uma página "Sobre Mim" de um portfólio de desenvolvedor. Mantenha um tom ${aiPrompt.value.includes('casual') ? 'casual e amigável' : 'profissional e inspirador'}. O texto deve ter entre 2 e 4 parágrafos.`;
-    const generatedText = await geminiService.generateText(prompt);
+    const generatedText = await apiGeminiService.generateText(prompt);
     aboutForm.value.description = generatedText;
     closeAIModal();
   } catch (error) {

@@ -147,7 +147,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
-import { geminiService } from '@/services/gemini.service';
+import { apiGeminiService } from '@/services/api.gemini.service';
 
 const store = useStore();
 const skills = computed(() => store.state.portfolios.skills);
@@ -185,7 +185,7 @@ const analyzeSkillsWithAI = async () => {
       return;
     }
 
-    const result = await geminiService.analyzeSkills({ experiences, projects, articles, tutorials });
+    const result = await apiGeminiService.analyzeSkills({ experiences, projects, articles, tutorials });
     aiResults.value = result;
     showAIResultDialog.value = true;
   } catch (error) {

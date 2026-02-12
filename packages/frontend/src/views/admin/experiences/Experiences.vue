@@ -117,7 +117,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useStore } from 'vuex';
 import { v4 as uuidv4 } from 'uuid';
-import { geminiService } from '@/services/gemini.service';
+import { apiGeminiService } from '@/services/api.gemini.service';
 
 const store = useStore();
 const experiences = computed(() => store.state.portfolios.experiences || []);
@@ -228,7 +228,7 @@ const generateDescription = async () => {
 
     Texto base: "${aiPrompt.value}"`;
 
-    const generatedText = await geminiService.generateText(prompt);
+    const generatedText = await apiGeminiService.generateText(prompt);
     
     // Limpeza adicional via Regex (opcional, para garantir que não venham asteriscos residuais)
     experienceForm.value.description = generatedText.replace(/[*#_]/g, '').trim();
