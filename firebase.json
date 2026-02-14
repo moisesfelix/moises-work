@@ -14,21 +14,6 @@
           "destination": "/index.html"
         }
       ]
-    },
-    {
-      "target": "moises-work-admin",
-      "public": "packages/admin/dist",
-      "ignore": [
-        "firebase.json",
-        "**/.*",
-        "**/node_modules/**"
-      ],
-      "rewrites": [
-        {
-          "source": "**",
-          "destination": "/index.html"
-        }
-      ]
     }
   ],
   "functions": {
