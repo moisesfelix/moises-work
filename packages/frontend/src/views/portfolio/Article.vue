@@ -15,9 +15,13 @@
                       <div class="meta-item badge">
                           {{ article.category }}
                       </div>
+                      <button @click="toggleSpeech" class="btn-speech" :class="{ 'speaking': isSpeaking }">
+                          <i :class="isSpeaking ? 'fas fa-volume-mute' : 'fas fa-volume-up'"></i>
+                          {{ isSpeaking ? 'Parar Leitura' : 'Ler Artigo' }}
+                      </button>
                   </div>
                   
-                  <div v-if="article.tags && article.tags.length > 0" class="article-tags">
+                  <div class="article-tags">
                       <span v-for="tag in article.tags" :key="tag" class="tag-badge">#{{ tag }}</span>
                   </div>
               </div>
@@ -60,17 +64,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, inject, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, inject, watch, nextTick, onUnmounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRoute } from 'vue-router';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css'; // Importante para o tema do código
+import { ttsService } from '@/services/tts.service';
 
 const store = useStore();
 const route = useRoute();
 const showToast = inject('showToast') as (toast: { type: string; title: string; message: string; }) => void;
 
 const copiedIndex = ref<number | null>(null);
+const isSpeaking = ref(false);
 
 const article = computed(() => store.getters['portfolios/getArticleBySlug'](route.params.articleSlug as string));
 
@@ -97,6 +103,31 @@ const copyCode = async (code: string, index: number) => {
     }
 };
 
+const toggleSpeech = () => {
+    if (isSpeaking.value) {
+        ttsService.cancel();
+        isSpeaking.value = false;
+    } else {
+        if (article.value) {
+            // Remove HTML tags para leitura
+            const tempDiv = document.createElement("div");
+            tempDiv.innerHTML = article.value.content;
+            const textToRead = article.value.title + ". " + (tempDiv.textContent || tempDiv.innerText || "");
+            
+            ttsService.speak(textToRead);
+            isSpeaking.value = true;
+            
+            // Monitorar fim da fala (simplificado, idealmente o serviço emitiria eventos)
+            const checkInterval = setInterval(() => {
+                if (!ttsService.isSpeaking()) {
+                    isSpeaking.value = false;
+                    clearInterval(checkInterval);
+                }
+            }, 500);
+        }
+    }
+};
+
 const highlightCode = () => {
     document.querySelectorAll('pre code').forEach((block) => {
         hljs.highlightElement(block as HTMLElement);
@@ -106,6 +137,13 @@ const highlightCode = () => {
 onMounted(() => {
     if (article.value) {
         highlightCode();
+    }
+});
+
+onUnmounted(() => {
+    // Parar fala ao sair da página
+    if (isSpeaking.value) {
+        ttsService.cancel();
     }
 });
 
@@ -162,20 +200,55 @@ watch(article, async () => {
   text-transform: uppercase;
 }
 
+.btn-speech {
+    background: transparent;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    padding: 4px 10px;
+    border-radius: 99px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s;
+    margin-left: 10px; /* Separar dos badges */
+}
+
+.btn-speech:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-speech.speaking {
+    background: var(--primary);
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
 .article-tags {
   margin-top: 15px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  color: var(--text-color-paragraph); /* Adicionar cor para garantir visibilidade */
+  margin-bottom: 20px; /* Adicionado espaço para separar da imagem */
 }
 
 .tag-badge {
-  background-color: rgba(0, 0, 0, 0.05);
-  color: var(--text-color-paragraph);
-  padding: 3px 8px;
+  background-color: var(--background-body); /* Cor mais sólida */
+  color: var(--primary); /* Cor de destaque */
+  padding: 5px 10px;
   border-radius: 4px;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-family: monospace;
+  border: 1px solid var(--timeline-border); /* Borda sutil */
 }
 
 .image-container {
