@@ -3,8 +3,7 @@
 import { storage } from '@/firebase/config';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
-// 1. Importe o serviço do Gemini que corrigimos
-import { geminiService } from './gemini.service'; 
+import { apiGeminiService } from './api.gemini.service'; 
 
 class StorageService {
   
@@ -86,8 +85,8 @@ class StorageService {
     // ANTES (ERRADO): Tentava chamar uma API backend que não existe
     // const response = await fetch('/api/generate-image', ...);
 
-    // AGORA (CORRETO): Chama o serviço frontend que configuramos
-    return await geminiService.generateImage(prompt);
+    // AGORA (CORRETO): Chama o serviço api.gemini.service (backend)
+    return await apiGeminiService.generateImage(prompt);
   }
 }
 

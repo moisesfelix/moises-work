@@ -47,7 +47,7 @@ export interface GeneratedTutorial {
 
 // --- SERVIÇO ---
 class ApiGeminiService {
-  private baseUrl = 'https://api-4r3pfwtxnq-uc.a.run.app';
+  private baseUrl = import.meta.env.VITE_API_URL || 'https://api-4r3pfwtxnq-uc.a.run.app';
 
   private async post<T>(endpoint: string, body: unknown): Promise<T> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -59,8 +59,14 @@ class ApiGeminiService {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Failed to fetch');
+      let errorMessage = 'Failed to fetch';
+      try {
+        const error = await response.json();
+        errorMessage = error.message || error.error || errorMessage;
+      } catch {
+        errorMessage = `Request failed: ${response.status} ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
 
     return response.json();
@@ -81,6 +87,22 @@ class ApiGeminiService {
   async generateText(prompt: string): Promise<string> {
     const response = await this.post<{text: string}>('/v1/gemini/generate-text', { prompt });
     return response.text;
+  }
+
+  async generateImage(prompt: string): Promise<Blob> {
+    // Call backend endpoint which returns base64
+    const response = await this.post<{imageBase64: string}>('/v1/gemini/generate-image', { prompt });
+    
+    // Convert Base64 to Blob
+    const byteCharacters = atob(response.imageBase64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'image/jpeg' });
+    
+    return blob;
   }
 }
 

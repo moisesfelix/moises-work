@@ -1,5 +1,4 @@
 import type { Module } from 'vuex';
-import { geminiService } from '@/services/gemini.service';
 import { apiGeminiService } from '@/services/api.gemini.service';
 import { storageService } from '@/services/storage.service';
 import type { Article } from 'shared';

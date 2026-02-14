@@ -5,6 +5,7 @@ interface UIState {
   isLoading: boolean;
   error: string | null;
   currentTheme: 'light' | 'dark';
+  toast: { show: boolean; message: string; type: 'success' | 'error' | 'warning' | 'info' };
 }
 
 const uiModule: Module<UIState, any> = {
@@ -13,6 +14,7 @@ const uiModule: Module<UIState, any> = {
     isLoading: false,
     error: null,
     currentTheme: (localStorage.getItem('theme') as 'light' | 'dark') || 'dark',
+    toast: { show: false, message: '', type: 'info' }
   },
   mutations: {
     setLoading(state, isLoading: boolean) {
@@ -26,6 +28,12 @@ const uiModule: Module<UIState, any> = {
       localStorage.setItem('theme', theme);
       document.documentElement.className = theme + '-theme';
     },
+    showToast(state, payload: { message: string; type: 'success' | 'error' | 'warning' | 'info' }) {
+        state.toast = { show: true, message: payload.message, type: payload.type };
+    },
+    hideToast(state) {
+        state.toast.show = false;
+    }
   },
   actions: {
     toggleTheme({ commit, state }) {
@@ -37,6 +45,12 @@ const uiModule: Module<UIState, any> = {
       commit('setTheme', theme);
       document.documentElement.className = theme + '-theme';
     },
+    triggerToast({ commit }, payload: { message: string; type: 'success' | 'error' | 'warning' | 'info'; duration?: number }) {
+        commit('showToast', payload);
+        setTimeout(() => {
+            commit('hideToast');
+        }, payload.duration || 3000);
+    }
   },
 };
 
