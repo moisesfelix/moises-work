@@ -9,17 +9,15 @@
       <p>{{ error }}</p>
       <router-link to="/" class="btn">Voltar ao Início</router-link>
     </div>
-    <div v-else>
+    <div v-else class="app-container">
       <!-- Reuse UnifiedLayout structure here but for public portfolio viewing -->
-      <div class="app-container">
         <TheHeader />
         <div class="layout-container">
           <main class="main-content">
              <router-view :slug="slug" />
           </main>
         </div>
-        <TheFooter />
-      </div>
+        <TheFooter class="layout-footer" />
     </div>
   </div>
 </template>

@@ -16,7 +16,7 @@ const isAuthenticated = computed(() => store.getters['auth/isAuthenticated']);
         <router-view />
       </main>
     </div>
-    <TheFooter v-if="!isAuthenticated" />
+    <TheFooter v-if="!isAuthenticated" class="layout-footer" />
   </div>
 </template>
 

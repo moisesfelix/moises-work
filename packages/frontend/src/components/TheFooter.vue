@@ -1,6 +1,10 @@
 <template>
-    <footer class="main-footer">
-        <div class="container">
+    <footer :class="['main-footer', { 'collapsed': isCollapsed }]">
+        <button class="toggle-footer" @click="toggleFooter" aria-label="Toggle Footer">
+            <span v-if="isCollapsed">Show Footer ▲</span>
+            <span v-else>Hide Footer ▼</span>
+        </button>
+        <div class="container" v-show="!isCollapsed">
             <div class="footer-content">
                 <div class="footer-brand">
                     <div class="logo">Moisés<span>Felix</span></div>
@@ -40,7 +44,13 @@
 import { ref, inject } from 'vue';
 
 const newsletterEmail = ref('');
+const isCollapsed = ref(false); // Estado para controlar a visibilidade do footer
+
 const showToast = inject('showToast') as (message: string) => void;
+
+const toggleFooter = () => {
+    isCollapsed.value = !isCollapsed.value;
+};
 
 const subscribeNewsletter = () => {
     if (newsletterEmail.value) {
@@ -56,6 +66,49 @@ const subscribeNewsletter = () => {
     padding-top: 4rem;
     padding-bottom: 2rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative; /* Para posicionar o botão absoluto se necessário, mas aqui usaremos flex/grid no layout pai ou fixo */
+    transition: all 0.3s ease;
+}
+
+.main-footer.collapsed {
+    padding-top: 0;
+    padding-bottom: 0;
+    height: 40px; /* Altura apenas da barra de toggle */
+    overflow: hidden;
+    background-color: transparent; 
+    border-top: none;
+}
+
+.toggle-footer {
+    width: 100%;
+    background-color: var(--dark);
+    color: var(--gray);
+    border: none;
+    border-top: 1px solid var(--primary);
+    padding: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background-color 0.3s;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toggle-footer:hover {
+    background-color: var(--primary);
+    color: white;
+}
+
+/* Ajuste para quando o footer não está colapsado, o botão fica no topo dele */
+.main-footer:not(.collapsed) {
+    padding-top: 50px; /* Espaço para o botão */
 }
 
 .footer-content {
