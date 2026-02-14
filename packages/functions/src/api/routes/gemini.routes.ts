@@ -15,5 +15,7 @@ router.post('/analyze-skills', geminiController.analyzeSkills);
 // Route for generic text generation
 router.post('/generate-text', geminiController.generateText);
 
+// Route for image generation (Imagen 3)
+router.post('/generate-image', geminiController.generateImage);
 
 export const geminiRoutes = router;

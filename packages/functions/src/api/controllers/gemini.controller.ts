@@ -67,6 +67,26 @@ class GeminiController {
         return res.status(500).send({ error: 'Failed to generate text.', details: errorMessage });
     }
   }
+
+  async generateImage(req: Request, res: Response) {
+    try {
+        const { prompt } = req.body;
+        if (!prompt) {
+            return res.status(400).send({ error: 'Missing required field: prompt.' });
+        }
+
+        // Returns a Base64 string
+        const imageBase64 = await geminiService.generateImage(prompt);
+        
+        // Return JSON with base64 data
+        // Frontend will decode to Blob/File
+        return res.status(200).send({ imageBase64 });
+    } catch (error: any) {
+        console.error('Error generating image:', error);
+        const errorMessage = error.message || 'Failed to generate image';
+        return res.status(500).send({ error: errorMessage });
+    }
+  }
 }
 
 export const geminiController = new GeminiController();

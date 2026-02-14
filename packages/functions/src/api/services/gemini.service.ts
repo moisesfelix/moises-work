@@ -213,6 +213,80 @@ class GeminiService {
       throw new Error('Failed to generate text.');
     }
   }
+
+  /**
+   * Generates an image using Imagen 3 model via REST API
+   * Returns a Base64 string ready for upload/display.
+   */
+  async generateImage(prompt: string): Promise<string> {
+    // Configuration for Imagen 3 model
+    // Note: 'imagen-3.0-generate-001' is the public name currently available in beta
+    // If you have access to 'imagen-4.0-generate-001', replace it here.
+    const MODEL = "models/imagen-3.0-generate-001";
+    const API_KEY = geminiApiKey.value();
+    const URL = `https://generativelanguage.googleapis.com/v1beta/${MODEL}:predict?key=${API_KEY}`;
+    
+    try {
+        console.log(`🎨 GeminiService: Requesting image for "${prompt.substring(0, 20)}..."`);
+        
+        // Use fetch (Node.js 18+ has native fetch)
+        const response = await fetch(URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                instances: [
+                    { prompt: prompt }
+                ],
+                parameters: {
+                    sampleCount: 1,
+                    aspectRatio: "16:9", // Wide format for blog cover
+                    outputMimeType: "image/jpeg"
+                }
+            })
+        });
+
+        // If API fails (400, 403, 500)
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error("❌ Imagen API Error:", JSON.stringify(errorData));
+            throw new Error(`Google API Error: ${response.status} - ${errorData?.error?.message || response.statusText}`);
+        }
+
+        const data: any = await response.json();
+        
+        // Validation
+        if (!data.predictions || !data.predictions[0]?.bytesBase64Encoded) {
+            throw new Error("API responded OK, but with no image data.");
+        }
+        
+        // Return Base64 string directly
+        const base64Image = data.predictions[0].bytesBase64Encoded;
+        console.log("✅ Image generated successfully!");
+        return base64Image;
+
+    } catch (error) {
+        console.warn("⚠️ AI Image Generation Failed. Using Fallback.", error);
+        
+        // --- FALLBACK (PLAN B) ---
+        // Download a random image to prevent failure
+        try {
+            // Using a reliable placeholder service that returns binary data
+            // We need to convert it to base64 for consistency
+            const fallbackUrl = `https://picsum.photos/seed/${Date.now()}/800/600`;
+            const fallbackResponse = await fetch(fallbackUrl);
+            
+            if (!fallbackResponse.ok) throw new Error("Fallback failed");
+            
+            const arrayBuffer = await fallbackResponse.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+            return buffer.toString('base64');
+            
+        } catch (fallbackError) {
+            console.error("❌ Critical Failure: Neither AI nor Fallback worked.");
+            throw new Error("Could not obtain any image for the article.");
+        }
+    }
+  }
 }
 
 export const geminiService = new GeminiService();
