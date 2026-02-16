@@ -10,8 +10,57 @@
       ],
       "rewrites": [
         {
+          "source": "/api/**",
+          "function": "api"
+        },
+        {
+          "source": "/share/**",
+          "function": "link"
+        },
+        {
+          "source": "/debug/**",
+          "function": "link"
+        },
+        {
+          "source": "/*/artigo/*",
+          "function": "link"
+        },
+        {
+          "source": "/*/tutorial/*",
+          "function": "link"
+        },
+        {
           "source": "**",
           "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "/share/**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=300, s-maxage=600"
+            }
+          ]
+        },
+        {
+          "source": "/*/artigo/*",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=300, s-maxage=600"
+            }
+          ]
+        },
+        {
+          "source": "/*/tutorial/*",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=300, s-maxage=600"
+            }
+          ]
         }
       ]
     }

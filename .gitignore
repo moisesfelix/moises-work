@@ -21,10 +21,18 @@ yarn-error.log*
 
 # Output
 output.txt
+output-*.txt
+
+# Firebase
+.firebase/
+ui-debug.log
+packages/functions/ui-debug.log
 
 # Environment variables
 .env
 .env*.todo
+.env.local
+packages/functions/src/configs/serviceAccountKey.json
 
 # Continue
 .continue/
