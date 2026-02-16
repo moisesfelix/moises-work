@@ -46,15 +46,21 @@ export interface GeneratedTutorial {
 }
 
 // --- SERVIÇO ---
+import { authService } from './auth.service';
+
 class ApiGeminiService {
   private baseUrl = import.meta.env.VITE_API_URL || 'https://api-4r3pfwtxnq-uc.a.run.app';
 
   private async post<T>(endpoint: string, body: unknown): Promise<T> {
+    const authHeaders = await authService.getAuthHeader();
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+      ...authHeaders
+    };
+
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(body),
     });
 
@@ -89,20 +95,9 @@ class ApiGeminiService {
     return response.text;
   }
 
-  async generateImage(prompt: string): Promise<Blob> {
-    // Call backend endpoint which returns base64
+  async generateImage(prompt: string): Promise<string> {
     const response = await this.post<{imageBase64: string}>('/v1/gemini/generate-image', { prompt });
-    
-    // Convert Base64 to Blob
-    const byteCharacters = atob(response.imageBase64);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'image/jpeg' });
-    
-    return blob;
+    return response.imageBase64;
   }
 }
 
