@@ -19,6 +19,9 @@
                           <i :class="isSpeaking ? 'fas fa-volume-mute' : 'fas fa-volume-up'"></i>
                           {{ isSpeaking ? 'Parar Leitura' : 'Ler Artigo' }}
                       </button>
+                      <button @click="shareArticle" class="btn-speech">
+                          <i class="fas fa-share-alt"></i> Compartilhar
+                      </button>
                   </div>
                   
                   <div class="article-tags">
@@ -78,7 +81,59 @@ const showToast = inject('showToast') as (toast: { type: string; title: string; 
 const copiedIndex = ref<number | null>(null);
 const isSpeaking = ref(false);
 
+const currentPortfolioId = computed(() => store.state.portfolios.activePortfolioId);
 const article = computed(() => store.getters['portfolios/getArticleBySlug'](route.params.articleSlug as string));
+
+const shareArticle = async () => {
+    if (!article.value || !currentPortfolioId.value) {
+        showToast({
+            type: 'error',
+            title: 'Erro',
+            message: 'Não foi possível gerar o link de compartilhamento.'
+        });
+        return;
+    }
+
+    // Configuração da URL da API de compartilhamento
+    const isDev = window.location.hostname === 'localhost';
+    
+    // Se estiver em dev, assume emulador. Se estiver em prod, assume rewrite /share ou cloud function URL.
+    // Rewrite: "source": "/share/**", "function": "link"
+    const apiBase = isDev 
+        ? 'http://127.0.0.1:5001/moises-work-app/us-central1/link' 
+        : `${window.location.origin}/share`;
+
+    const shareUrl = `${apiBase}/${currentPortfolioId.value}/article/${article.value.slug}`;
+
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: article.value.title,
+                text: article.value.description || article.value.excerpt,
+                url: shareUrl,
+            });
+        } catch (err) {
+            console.log('Compartilhamento cancelado ou erro:', err);
+        }
+    } else {
+        // Fallback para Desktop ou navegadores sem Web Share API
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            showToast({
+                type: 'success',
+                title: 'Link Copiado!',
+                message: 'Link de compartilhamento copiado para a área de transferência.'
+            });
+        } catch (err) {
+            console.error('Falha ao copiar link', err);
+            showToast({
+                type: 'error',
+                title: 'Erro',
+                message: 'Não foi possível copiar o link.'
+            });
+        }
+    }
+};
 
 const copyCode = async (code: string, index: number) => {
     try {
