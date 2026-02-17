@@ -2,6 +2,7 @@ import * as express from 'express';
 import * as cors from 'cors';
 import { authenticate } from './src/middlewares/auth.middleware';
 import { geminiRoutes } from './src/routes/gemini.routes';
+import { analyticsRoutes } from './src/routes/analytics.routes';
 
 const app = express();
 
@@ -11,6 +12,7 @@ app.use(express.json());
 
 // API Routes
 app.use('/v1/gemini', authenticate, geminiRoutes);
+app.use('/v1/analytics', authenticate, analyticsRoutes);
 
 // Simple health check
 app.get('/health', (req, res) => {

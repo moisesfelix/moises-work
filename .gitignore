@@ -30,7 +30,8 @@ packages/functions/ui-debug.log
 
 # Environment variables
 .env
-.env*.todo
+.env*
+todo.todo
 .env.local
 packages/functions/src/configs/serviceAccountKey.json
 

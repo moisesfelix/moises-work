@@ -1,3 +1,65 @@
-[] adicinar black-white
+[] adicinar black-white (já aplicado, mas tem q corrigir)
 [] adicinar a feature do newsetter
-[] adicinar login
+
+
+
+[] adicinar login com provider Google
+[] adicinar multitenant no frontend firebasrealtime
+
+
+[] refatorar a funcao fetchPortifolioData para fetchPortifolioData(userUid-nick)
+[] colocar um input para url do projeto em producao web
+[] corrigir o codigo com responsabilidade unica pois o service storage tem geracao de imagem quando deveria apenas fazer o crud no storage dos arquivos
+[] o conteudo do artigo tem q ser em json agora assim podemos validar esse objeto com types e joi/z 
+
+[] fazer um artigo sobre consernes
+[] fazer um artigo sobre forks no github - pedir a ia para fazer um trilha completa de artigo sobre git até o github
+[] feat Feed da Comunidade verificar o erro?
+[] como os dados sao todos publicos sem excessao
+    [] abrir o codigo para a comunidade... ou seja para que dev façam forks e evoluam para suas stack de aprendizado utilizando ia assistem para ex. mudar o backend de firebase funcitons cloud para aws.. ou render...ou docker...outro sistema similar ao firebase...ou outra linguagem go, php, c# tudo usando assistente code e usando lean manufacturing e 5w2h (plano de ação) criando artigos e tutoriais sobre o assunto
+
+[] a imagem
+
+
+filosofia...
+niguem conta até um milhao para saber q apois será um milhão e um. a ias llms sao assim vc sabe o inicio e o fim porem nao quer fazer a ideia hand on, quer vc o final do jeito q vc imaginou. simples assim
+
+CODIGO APP
+//BUGS
+[] 
+//NEW FEATURES
+[] corrigir o slug
+[] adicionar regra de seguranca midlews
+[] corriger leitor de artigo
+[] a criar imagem ter 3 formato , thubnail, medium, large
+[] atualizar o portifolio para ter n profissoes ou seja (o prompt nao sera mais fixed)
+[] em experiencia tem q ter o total de anos, meses, dias, horas de conhecimento em tal ferramente, pois um artigo tem tempo, tutorias tem tempo de leitura e aplicação
+[] adicionar o nivel de verdade das habilidades, ou seja, para ter uma validacao do seu portifolio profissional... sera necessaria ele publicar artigos, tutoriais, e projetos... somente assim prova o portifolio 
+
+MOISES PORTIFOLIO REAL
+
+[] CRIAR UM PLATAFORMA ONDE TODA EQUIPE HUMANOS E AGENTE INTERAJAM NO MESMO CHAT ISSO AJUDARA A RESOLVER O CODIGO MUITO MAIS RAPIDO TIPO UM HAKATON, MESMO EM BRANCH DIFERENTE ELES PODEM PERGUTAREM ENTRE SE PODE FAZER TAL ALTERACAO OU ATE MESMO PEGAR BRANCH DE OUTRO USUARIO OU IA PARA MODIFICAR A SUA EM TEMPO REAL
+
+[] ao adicionar um novo artigo, tutorial aparecer o botao para visualizar o novo artigo/tutorial
+
+
+-----------------------------------------------------
+
+### Segurança e Controle de Custos
+
+ [ ] Implementar middleware de Rate Limiting (ex: `express-rate-limit`) nas rotas do Express (`gemini.routes.ts`) atrelado ao UID do usuário, evitando abusos de custo na API do Gemini/Imagen.
+ [ ] Escrever as Regras de Segurança do Firebase Realtime Database (`database.rules.json`), garantindo que a escrita em `portfolios_content/$portfolioId` exija `auth.uid === data.ownerUid`.
+ [ ] Escrever as Regras de Segurança do Firebase Storage (`storage.rules`), restringindo uploads e deleções apenas aos donos dos respectivos arquivos.
+
+### Refatoração e Arquitetura
+
+ [ ] Migrar o gerenciamento de estado de Vuex para Pinia (atualizar `src/store/index.ts` e arquivos modulares).
+ [ ] Remover as tipagens `any` genéricas que sobraram nos módulos de estado (ex: `ai.ts` e `auth.ts`) durante a migração para o Pinia.
+ [ ] Arquitetar o "Feed Global" da Landing Page: Criar um nó dedicado no banco (ex: `articles_feed`) ou um endpoint específico para listar artigos recentes de todos os usuários sem precisar puxar o banco inteiro para o cliente.
+
+### Edge Cases, Limpeza e UX
+
+ [ ] Substituir o fallback de erro da geração de imagem (`picsum.photos`) no `gemini.service.ts` do backend por uma imagem estática padrão (ex: `erro-imagem.jpg`) hospedada no seu próprio Storage.
+ [ ] Atualizar a lógica de exclusão (ex: `deleteItem` na store) para que, ao deletar um artigo, tutorial ou projeto, a imagem associada a ele também seja apagada do Firebase Storage (evitando lixo de arquivos órfãos).
+ [ ] Definir o `minInstances` (instâncias mínimas) no Firebase Functions especificamente para a função `link`, evitando cold starts lentos quando o LinkedIn ou Twitter tentarem ler as meta tags de um artigo compartilhado.
+

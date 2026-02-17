@@ -35,6 +35,65 @@ class LinkController {
     }
 
     /**
+     * Analytics Logger
+     */
+    private async logAccess(
+        portfolioId: string,
+        type: 'article' | 'tutorial',
+        slug: string,
+        req: Request
+    ) {
+        try {
+            const userAgent = req.headers['user-agent'] || '';
+            // Basic bot detection
+            const isBot = /bot|googlebot|crawler|spider|robot|crawling|facebookexternalhit|linkedinbot|twitterbot/i.test(userAgent);
+            
+            const referer = req.headers['referer'] || '';
+            // Handle X-Forwarded-For which can be an array or string
+            const forwarded = req.headers['x-forwarded-for'];
+            const ip = (typeof forwarded === 'string' ? forwarded.split(',')[0] : (Array.isArray(forwarded) ? forwarded[0] : req.socket.remoteAddress)) || '';
+            
+            const { utm_source, utm_medium, utm_campaign, utm_term, utm_content } = req.query;
+
+            const entry = {
+                timestamp: Date.now(),
+                isoDate: new Date().toISOString(),
+                type,
+                slug,
+                referer,
+                userAgent,
+                ip, 
+                isBot,
+                utm: {
+                    source: utm_source || null,
+                    medium: utm_medium || null,
+                    campaign: utm_campaign || null,
+                    term: utm_term || null,
+                    content: utm_content || null
+                }
+            };
+            
+            // Clean up empty UTM
+            Object.keys(entry.utm).forEach((k) => {
+                if ((entry.utm as any)[k] == null) delete (entry.utm as any)[k];
+            });
+            if (Object.keys(entry.utm).length === 0) {
+                delete (entry as any).utm;
+            }
+
+            // Path: portfolios_analytics/{portfolioId}/{YYYY-MM}/{timestamp_random}
+            const date = new Date();
+            const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            
+            await db.ref(`portfolios_analytics/${portfolioId}/${yearMonth}`).push(entry);
+            console.log(`[Analytics] Logged access for ${type}/${slug}`);
+
+        } catch (e) {
+            console.error('[LinkController] Analytics error:', e);
+        }
+    }
+
+    /**
      * Handler para compartilhamento de artigos
      * Suporta tanto /share/:portfolioId/article/:slug quanto /:portfolioId/artigo/:slug
      */
@@ -74,6 +133,11 @@ class LinkController {
             }
             
             console.log(`[LinkController] Article found: ${article.title}`);
+
+            // Analytics: Log access asynchronously
+            this.logAccess(resolvedPortfolioId, 'article', slug, req).catch(err => 
+                console.error('[LinkController] Failed to log article access', err)
+            );
 
             const metaRef = db.ref(`portfolios_meta/${resolvedPortfolioId}`);
             const metaSnap = await metaRef.once('value');
@@ -143,6 +207,11 @@ class LinkController {
             if (!tutorial) {
                 return res.status(404).send('Tutorial not found.');
             }
+
+            // Analytics: Log access asynchronously
+            this.logAccess(resolvedPortfolioId, 'tutorial', slug, req).catch(err => 
+                console.error('[LinkController] Failed to log tutorial access', err)
+            );
 
             const metaRef = db.ref(`portfolios_meta/${resolvedPortfolioId}`);
             const metaSnap = await metaRef.once('value');
