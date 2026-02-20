@@ -3,7 +3,7 @@ import { defineSecret } from 'firebase-functions/params';
 
 const geminiApiKey = defineSecret('GEMINI_KEY');
 
-// --- INTERFACES (Copied from frontend) ---
+// --- INTERFACES ---
 export interface ArticleGenerationRequest {
   topic: string;
   category: string;
@@ -21,15 +21,12 @@ export interface TutorialGenerationRequest {
 export interface GeneratedArticle {
   title: string;
   excerpt: string;
-  content: string; // HTML
+  content: string;
   category: string;
   slug: string;
   readTime: string;
-  makeImagePrompt: string; // Prompt for the image
-  codeBlocks?: Array<{ 
-    language: string;
-    code: string;
-  }>;
+  makeImagePrompt: string;
+  codeBlocks?: Array<{ language: string; code: string }>;
   tags?: string[];
 }
 
@@ -41,22 +38,55 @@ export interface GeneratedTutorial {
   duration: string;
   excerpt: string;
   makeImagePrompt: string;
-  steps: Array<{ 
-    title: string;
-    content: string;
-    code?: string;
-  }>;
+  steps: Array<{ title: string; content: string; code?: string }>;
   tags?: string[];
 }
 
+export interface RoadmapRequest {
+  goal: string;               // Ex: "Quero me tornar dev Vue.js"
+  currentRole?: string;        // Ex: "Entregador"
+  months: number;              // Período em meses
+}
 
-// --- SERVICE ---
+export interface RoadmapStep {
+  id: string;
+  title: string;
+  description: string;
+  topics: string[];            // Tópicos a estudar
+  projectSuggestion?: string;  // Sugestão de projeto prático
+  estimatedHours: number;
+  dependsOn?: string[];        // IDs dos passos anteriores
+}
+
+export interface Roadmap {
+  id: string;
+  title: string;
+  overview: string;
+  steps: RoadmapStep[];
+  totalMonths: number;
+  resources: string[];         // Links, livros, etc.
+}
+
+export interface ProjectSuggestion {
+  title: string;
+  description: string;
+  technologies: string[];
+  difficulty: 'iniciante' | 'intermediário' | 'avançado';
+  estimatedTime: string;
+  features: string[];
+}
+
+export interface SoftSkillAnalysis {
+  communication: number;       // 0-100
+  teamwork: number;
+  problemSolving: number;
+  adaptability: number;
+  leadership: number;
+  suggestedImprovements: string[];
+}
+
 class GeminiService {
   private textModel: GenerativeModel | undefined;
-
-  constructor() {
-    // Constructor is now empty. Initialization will happen on demand.
-  }
 
   private getModel(): GenerativeModel {
     if (!this.textModel) {
@@ -66,10 +96,6 @@ class GeminiService {
     return this.textModel;
   }
 
-
-  /**
-   * Generates the text content of the article in JSON format
-   */
   async generateArticle(request: ArticleGenerationRequest): Promise<GeneratedArticle> {
     const model = this.getModel();
     const prompt = `
@@ -77,8 +103,7 @@ class GeminiService {
     Create a JSON article about: "${request.topic}".
     Context: Category ${request.category}, Tone ${request.tone || 'Professional'}.
     
-    IMPORTANT: Return ONLY a valid JSON object. Do not include any markdown formatting like \`\`\`json.
-    The response must be the JSON object itself.
+    IMPORTANT: Return ONLY a valid JSON object. No markdown.
     Required structure:
     {
       "title": "Engaging title",
@@ -95,12 +120,8 @@ class GeminiService {
 
     try {
       const result = await model.generateContent(prompt);
-      const response = result.response;
-      let text = response.text();
-
-      // Robust cleaning to ensure valid JSON
+      let text = result.response.text();
       text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-
       return JSON.parse(text);
     } catch (error) {
       console.error('GeminiService: Failed to generate/parse article', error);
@@ -108,17 +129,13 @@ class GeminiService {
     }
   }
 
-  /**
-   * Generates the text content of a tutorial
-   */
   async generateTutorial(request: TutorialGenerationRequest): Promise<GeneratedTutorial> {
     const model = this.getModel();
     const prompt = `
     Create a step-by-step technical tutorial in JSON about: "${request.topic}".
     Level: ${request.difficulty}.
     
-    IMPORTANT: Return ONLY a valid JSON object. Do not include any markdown formatting like \`\`\`json.
-    The response must be the JSON object itself.
+    IMPORTANT: Return ONLY a valid JSON object. No markdown.
     Structure:
     {
       "title": "Title",
@@ -143,147 +160,162 @@ class GeminiService {
       throw new Error('Failed to generate tutorial.');
     }
   }
-  
-  /**
-   * Analyzes experiences and projects to extract and categorize skills
-   */
-  async analyzeSkills(data: { experiences: any[]; projects: any[]; articles: any[]; tutorials: any[] }): Promise<any> {
+
+  async generateRoadmap(request: RoadmapRequest): Promise<Roadmap> {
     const model = this.getModel();
     const prompt = `
-    You are an expert in analyzing resumes and technical profiles.
-    Analyze the following professional experiences, portfolio projects, written technical articles, and created tutorials to extract and categorize technical skills.
+    You are an expert career coach and learning path designer.
+    User's goal: "${request.goal}".
+    Current role: "${request.currentRole || 'Not specified'}".
+    Time available: ${request.months} months.
     
-    DATA FOR ANALYSIS:
-    Experiences: ${JSON.stringify(data.experiences.map(e => ({ role: e.role, description: e.description, technologies: e.technologies })))}
-    Projects: ${JSON.stringify(data.projects.map(p => ({ title: p.title, description: p.description, technologies: p.technologies, tags: p.tags })))}
-    Articles: ${JSON.stringify(data.articles.map(a => ({ title: a.title, category: a.category, tags: a.tags })))}
-    Tutorials: ${JSON.stringify(data.tutorials.map(t => ({ title: t.title, category: t.category, tags: t.tags })))}
-
-    TASK:
-    1. Identify all technical skills, tools, languages, and frameworks mentioned or implied.
-    2. Consider the TAGS of Articles and Tutorials as strong indicators of technical knowledge and skill.
-    3. Group them into logical categories (e.g., "Frontend", "Backend", "DevOps", "Mobile", "Database", "Tools", etc.).
-    4. For each skill, estimate a proficiency level (0-100) based on the frequency of use and complexity of the projects/articles where it appears.
-       - If it appears many times or in complex projects -> 80-100%
-       - If it appears moderately -> 50-79%
-       - If it appears rarely -> 20-49%
+    Create a detailed, step-by-step learning roadmap in JSON format.
+    Each step should include a title, description, list of topics to study, a suggested practical project (if applicable), estimated hours, and dependencies (if any).
     
-    REQUIRED RETURN:
-    Return ONLY a valid JSON with the following structure (no markdown):
+    IMPORTANT: Return ONLY a valid JSON object. No markdown.
+    Structure:
     {
-      "Frontend": [
-        { "name": "React", "percent": 90 },
-        { "name": "CSS", "percent": 85 }
+      "id": "unique-id",
+      "title": "Roadmap title",
+      "overview": "Brief overview of the journey",
+      "steps": [
+        {
+          "id": "step-1",
+          "title": "Step title",
+          "description": "What to learn",
+          "topics": ["topic1", "topic2"],
+          "projectSuggestion": "Optional project idea",
+          "estimatedHours": 10,
+          "dependsOn": []
+        }
       ],
-      "Backend": [
-        { "name": "Node.js", "percent": 80 }
-      ],
-      "Database": [],
-      "DevOps": [],
-      "Tools": [],
-      "Mobile": []
+      "totalMonths": ${request.months},
+      "resources": ["link1", "link2"]
     }
     `;
 
     try {
       const result = await model.generateContent(prompt);
       let text = result.response.text();
-      
-      // Robust cleaning to ensure valid JSON
       text = text.replace(/```json/g, '').replace(/```/g, '').trim();
-      
       return JSON.parse(text);
     } catch (error) {
-      console.error('GeminiService: Failed to analyze skills', error);
-      throw new Error('Failed in AI skill analysis.');
+      console.error('GeminiService: Failed to generate roadmap', error);
+      throw new Error('Failed to generate roadmap.');
     }
   }
 
-  /**
-   * Generates simple text from a prompt.
-   */
+  async generateProjectSuggestion(technologies: string[], level: string): Promise<ProjectSuggestion> {
+    const model = this.getModel();
+    const prompt = `
+    Suggest a practical project for a developer using: ${technologies.join(', ')}.
+    Difficulty level: ${level}.
+    
+    Return a JSON object with:
+    - title
+    - description
+    - technologies (array)
+    - difficulty (iniciante/intermediário/avançado)
+    - estimatedTime (e.g., "2 weeks")
+    - features (array of key features)
+    
+    ONLY JSON, no markdown.
+    `;
+
+    try {
+      const result = await model.generateContent(prompt);
+      let text = result.response.text();
+      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(text);
+    } catch (error) {
+      console.error('GeminiService: Failed to generate project suggestion', error);
+      throw new Error('Failed to generate project suggestion.');
+    }
+  }
+
+  async analyzeSoftSkills(texts: string[]): Promise<SoftSkillAnalysis> {
+    const model = this.getModel();
+    const combined = texts.join('\n\n').substring(0, 10000); // limit
+    const prompt = `
+    Analyze the following texts (articles, project descriptions, etc.) written by a developer.
+    Based on the content, infer their soft skills and provide a JSON with scores (0-100) for:
+    - communication
+    - teamwork
+    - problemSolving
+    - adaptability
+    - leadership
+    Also suggest 2-3 improvements they could focus on.
+
+    Texts:
+    """
+    ${combined}
+    """
+
+    Return ONLY JSON, no markdown.
+    `;
+
+    try {
+      const result = await model.generateContent(prompt);
+      let text = result.response.text();
+      text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      return JSON.parse(text);
+    } catch (error) {
+      console.error('GeminiService: Failed to analyze soft skills', error);
+      throw new Error('Failed to analyze soft skills.');
+    }
+  }
+
   async generateText(prompt: string): Promise<string> {
     const model = this.getModel();
     try {
       const result = await model.generateContent(prompt);
-      const response = result.response;
-      return response.text();
+      return result.response.text();
     } catch (error) {
       console.error('GeminiService: Failed to generate text', error);
       throw new Error('Failed to generate text.');
     }
   }
 
-  /**
-   * Generates an image using Imagen 3 model via REST API
-   * Returns a Base64 string ready for upload/display.
-   */
   async generateImage(prompt: string): Promise<string> {
-    // Configuration for Imagen 3 model
-    // Note: 'imagen-3.0-generate-001' is the public name currently available in beta
-    // If you have access to 'imagen-4.0-generate-001', replace it here.
     const MODEL = "models/imagen-3.0-generate-001";
     const API_KEY = geminiApiKey.value();
     const URL = `https://generativelanguage.googleapis.com/v1beta/${MODEL}:predict?key=${API_KEY}`;
     
     try {
-        console.log(`🎨 GeminiService: Requesting image for "${prompt.substring(0, 20)}..."`);
-        
-        // Use fetch (Node.js 18+ has native fetch)
         const response = await fetch(URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                instances: [
-                    { prompt: prompt }
-                ],
+                instances: [ { prompt: prompt } ],
                 parameters: {
                     sampleCount: 1,
-                    aspectRatio: "16:9", // Wide format for blog cover
+                    aspectRatio: "16:9",
                     outputMimeType: "image/jpeg"
                 }
             })
         });
 
-        // If API fails (400, 403, 500)
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            console.error("❌ Imagen API Error:", JSON.stringify(errorData));
             throw new Error(`Google API Error: ${response.status} - ${errorData?.error?.message || response.statusText}`);
         }
 
         const data: any = await response.json();
-        
-        // Validation
         if (!data.predictions || !data.predictions[0]?.bytesBase64Encoded) {
             throw new Error("API responded OK, but with no image data.");
         }
-        
-        // Return Base64 string directly
-        const base64Image = data.predictions[0].bytesBase64Encoded;
-        console.log("✅ Image generated successfully!");
-        return base64Image;
-
+        return data.predictions[0].bytesBase64Encoded;
     } catch (error) {
-        console.warn("⚠️ AI Image Generation Failed. Using Fallback.", error);
-        
-        // --- FALLBACK (PLAN B) ---
-        // Download a random image to prevent failure
+        console.warn("AI Image Generation Failed. Using fallback.", error);
         try {
-            // Using a reliable placeholder service that returns binary data
-            // We need to convert it to base64 for consistency
             const fallbackUrl = `https://picsum.photos/seed/${Date.now()}/800/600`;
             const fallbackResponse = await fetch(fallbackUrl);
-            
             if (!fallbackResponse.ok) throw new Error("Fallback failed");
-            
             const arrayBuffer = await fallbackResponse.arrayBuffer();
             const buffer = Buffer.from(arrayBuffer);
             return buffer.toString('base64');
-            
         } catch (fallbackError) {
-            console.error("❌ Critical Failure: Neither AI nor Fallback worked.");
-            throw new Error("Could not obtain any image for the article.");
+            throw new Error("Could not obtain any image.");
         }
     }
   }

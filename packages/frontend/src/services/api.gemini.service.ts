@@ -1,5 +1,5 @@
+import { authService } from './auth.service';
 
-// --- INTERFACES ---
 export interface ArticleGenerationRequest {
   topic: string;
   category: string;
@@ -21,12 +21,9 @@ export interface GeneratedArticle {
   category: string;
   slug: string;
   readTime: string;
-  makeImagePrompt: string; // Prompt para a imagem
-  codeBlocks?: Array<{
-    language: string;
-    code: string;
-  }>;
-  tags?: string[]; // Adicionado: Tags do artigo
+  makeImagePrompt: string;
+  codeBlocks?: Array<{ language: string; code: string }>;
+  tags?: string[];
 }
 
 export interface GeneratedTutorial {
@@ -37,16 +34,50 @@ export interface GeneratedTutorial {
   duration: string;
   excerpt: string;
   makeImagePrompt: string;
-  steps: Array<{
-    title: string;
-    content: string;
-    code?: string;
-  }>;
+  steps: Array<{ title: string; content: string; code?: string }>;
   tags?: string[];
 }
 
-// --- SERVIÇO ---
-import { authService } from './auth.service';
+export interface RoadmapRequest {
+  goal: string;
+  currentRole?: string;
+  months: number;
+}
+
+export interface Roadmap {
+  id: string;
+  title: string;
+  overview: string;
+  steps: Array<{
+    id: string;
+    title: string;
+    description: string;
+    topics: string[];
+    projectSuggestion?: string;
+    estimatedHours: number;
+    dependsOn?: string[];
+  }>;
+  totalMonths: number;
+  resources: string[];
+}
+
+export interface ProjectSuggestion {
+  title: string;
+  description: string;
+  technologies: string[];
+  difficulty: string;
+  estimatedTime: string;
+  features: string[];
+}
+
+export interface SoftSkillAnalysis {
+  communication: number;
+  teamwork: number;
+  problemSolving: number;
+  adaptability: number;
+  leadership: number;
+  suggestedImprovements: string[];
+}
 
 class ApiGeminiService {
   private baseUrl = import.meta.env.VITE_API_URL || 'https://api-4r3pfwtxnq-uc.a.run.app';
@@ -74,7 +105,6 @@ class ApiGeminiService {
       }
       throw new Error(errorMessage);
     }
-
     return response.json();
   }
 
@@ -98,6 +128,19 @@ class ApiGeminiService {
   async generateImage(prompt: string): Promise<string> {
     const response = await this.post<{imageBase64: string}>('/v1/gemini/generate-image', { prompt });
     return response.imageBase64;
+  }
+
+  // NOVOS MÉTODOS
+  async generateRoadmap(request: RoadmapRequest): Promise<Roadmap> {
+    return this.post<Roadmap>('/v1/gemini/generate-roadmap', request);
+  }
+
+  async generateProjectSuggestion(technologies: string[], level: string): Promise<ProjectSuggestion> {
+    return this.post<ProjectSuggestion>('/v1/gemini/generate-project-suggestion', { technologies, level });
+  }
+
+  async analyzeSoftSkills(texts: string[]): Promise<SoftSkillAnalysis> {
+    return this.post<SoftSkillAnalysis>('/v1/gemini/analyze-soft-skills', { texts });
   }
 }
 

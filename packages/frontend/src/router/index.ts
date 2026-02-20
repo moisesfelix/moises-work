@@ -27,6 +27,7 @@ import AdminExperiences from '@/views/admin/experiences/Experiences.vue';
 import AdminSkills from '@/views/admin/skills/Skills.vue';
 import AdminAbout from '@/views/admin/about/About.vue';
 import AdminContact from '@/views/admin/contact/Contact.vue';
+import AdminRoadmap from '@/views/admin/roadmap/Roadmap.vue'; // NOVA
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -43,10 +44,9 @@ const routes: Array<RouteRecordRaw> = [
       const auth = getAuth();
       const user = auth.currentUser;
       if (user) {
-        // Already logged in, redirect to admin dashboard
         next('/admin/dashboard');
       } else {
-        next(); // Proceed to login page
+        next();
       }
     }
   },
@@ -106,6 +106,12 @@ const routes: Array<RouteRecordRaw> = [
         name: 'AdminContact',
         component: AdminContact,
         meta: { title: 'Contato' }
+      },
+      {
+        path: 'roadmap',
+        name: 'AdminRoadmap',
+        component: AdminRoadmap,
+        meta: { title: 'Trajetória' }
       }
     ]
   },
@@ -118,7 +124,7 @@ const routes: Array<RouteRecordRaw> = [
       { path: 'sobre', component: About, name: 'PortfolioAbout' },
       { path: 'experiencia', component: Experience, name: 'PortfolioExperience' },
       { path: 'habilidades', component: Skills, name: 'PortfolioSkills' },
-      { path: 'projetos', component: Portfolio, name: 'PortfolioProjects' }, // Renamed from 'portfolio' to 'projetos'
+      { path: 'projetos', component: Portfolio, name: 'PortfolioProjects' },
       { path: 'blog', component: Blog, name: 'PortfolioBlog' },
       { path: 'artigo/:articleSlug', component: Article, name: 'PortfolioArticle' },
       { path: 'tutoriais', component: PublicTutorials, name: 'PortfolioTutorials' },
@@ -146,19 +152,18 @@ router.beforeEach((to, from, next) => {
 
   if (requiresAuth) {
     const auth = getAuth();
-    const user = auth.currentUser; // Get the current user synchronously
+    const user = auth.currentUser;
 
     if (user) {
-      next(); // User is authenticated, proceed to the route
+      next();
     } else {
-      // User is not authenticated, redirect to login, preserving the current path
       next({
         path: '/login',
         query: { redirectedFrom: to.fullPath },
       });
     }
   } else {
-    next(); // Non-protected route, proceed
+    next();
   }
 });
 

@@ -1,10 +1,8 @@
 <template>
     <header>
         <div class="container header-container">
-            <!-- Logo dynamically links to home or slug home -->
             <router-link :to="slug ? `/${slug}` : '/'" class="logo">
                 <i class="fas fa-code"></i>
-
                 <span v-if="slug && portfolioTitle">{{ portfolioTitle }}</span>
                 <span v-else>moises.work</span>
             </router-link>
@@ -12,7 +10,6 @@
             <div class="nav-wrapper">
                 <nav :class="{ active: mobileMenuActive }">
                     <ul v-if="slug">
-                        <!-- Navigation for the current portfolio being viewed -->
                         <li><router-link :to="`/${slug}`" @click="closeMobileMenu"><i class="fas fa-home"></i> Início</router-link></li>
                         <li><router-link :to="`/${slug}/sobre`" @click="closeMobileMenu"><i class="fas fa-user"></i> Sobre</router-link></li>
                         <li><router-link :to="`/${slug}/experiencia`" @click="closeMobileMenu"><i class="fas fa-briefcase"></i> Experiência</router-link></li>
@@ -21,19 +18,15 @@
                         <li><router-link :to="`/${slug}/blog`" @click="closeMobileMenu"><i class="fas fa-newspaper"></i> Blog</router-link></li>
                         <li><router-link :to="`/${slug}/tutoriais`" @click="closeMobileMenu"><i class="fas fa-book-open"></i> Tutoriais</router-link></li>
                         <li><router-link :to="`/${slug}/contato`" @click="closeMobileMenu"><i class="fas fa-envelope"></i> Contato</router-link></li>
-                        
-                        <!-- If user is not logged in, show login link even inside a portfolio -->
-                         <li v-if="!isLoggedIn"><router-link to="/login" @click="closeMobileMenu"><i class="fab fa-google"></i> Login</router-link></li>
+                        <li v-if="!isLoggedIn"><router-link to="/login" @click="closeMobileMenu"><i class="fab fa-google"></i> Login</router-link></li>
                     </ul>
                      <ul v-else>
-                         <!-- Default Navigation for Landing Page or non-slug pages -->
                          <li><router-link to="/" @click="closeMobileMenu"><i class="fas fa-home"></i> Início</router-link></li>
                         <li v-if="!isLoggedIn"><router-link to="/login" @click="closeMobileMenu"><i class="fab fa-google"></i> Login</router-link></li>
                     </ul>
                 </nav>
                 <ThemeSwitcher />
                 
-                <!-- Admin Menu (Avatar) - Only for logged in users to manage THEIR portfolio -->
                 <div v-if="isLoggedIn" class="admin-menu">
                     <button @click="toggleAdminDropdown" class="avatar-btn">
                         <img v-if="user?.photoURL" :src="user.photoURL" alt="User Avatar" class="avatar">
@@ -48,10 +41,10 @@
                         <li><router-link to="/admin/experiences" @click="closeAdminDropdown"><i class="fas fa-briefcase"></i> Experiências</router-link></li>
                         <li><router-link to="/admin/skills" @click="closeAdminDropdown"><i class="fas fa-cogs"></i> Habilidades</router-link></li>
                         <li><router-link to="/admin/contact" @click="closeAdminDropdown"><i class="fas fa-envelope"></i> Contato</router-link></li>
+                        <li><router-link to="/admin/roadmap" @click="closeAdminDropdown"><i class="fas fa-rocket"></i> Trajetória</router-link></li> <!-- NOVO -->
                         <li><a @click="logout"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
                     </ul>
                 </div>
-                <!-- Login Button - Only for logged out users (when avatar is hidden) -->
                 <div v-else class="login-menu">
                     <router-link to="/login" class="btn btn-outline"><i class="fab fa-google"></i> Entrar</router-link>
                 </div>
@@ -101,8 +94,8 @@ const closeAdminDropdown  = () => { adminDropdownActive.value = false; };
 const logout = async () => { await signOut(auth); closeAdminDropdown(); router.push("/"); };
 </script>
 
-
 <style scoped>
+/* Estilos mantidos iguais aos originais */
 header {
     position: fixed;
     top: 0;
@@ -146,8 +139,7 @@ header {
 }
 
 .mobile-menu-btn {
-
-    display: none; /* Hidden by default */
+    display: none;
     background: none;
     border: none;
     color: var(--text-color-heading);
@@ -156,15 +148,10 @@ header {
     z-index: 1001;
 }
 
-
-
-
-
 .nav-wrapper:has(nav) .mobile-menu-btn {
-    display: block; /* Show only if nav exists (i.e. slug is present) */
+    display: block;
 }
 
-/* Ensure btn-outline style is present if not global */
 .btn-outline {
     padding: 0.5rem 1rem;
     border: 1px solid var(--primary);
@@ -182,12 +169,10 @@ header {
     color: white;
 }
 
-/* Ensure admin dropdown links are visible inside dropdown */
 .admin-dropdown li a {
     display: flex;
 }
 
-/* Sidebar Navigation Styles (Mobile Menu Logic applied generally) */
 nav {
     position: fixed;
     top: 0;
@@ -210,7 +195,6 @@ nav.active {
 }
 
 nav ul {
-    /* Show nav list only inside the sidebar */
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
