@@ -108,6 +108,11 @@
               <input type="text" id="title" v-model="articleForm.title" required placeholder="Título do artigo" />
             </div>
 
+            <div class="form-group">
+              <label for="slug">Título</label>
+              <input type="text" id="slug" v-model="articleForm.slug" required placeholder="TSlugo" />
+            </div>
+
             <div class="form-row">
               <div class="form-group half">
                 <label for="category">Categoria</label>
@@ -125,7 +130,12 @@
             </div>
 
             <div class="form-group">
-              <label for="description">Conteúdo / Resumo</label>
+              <label for="content">Conteúdo</label>
+              <textarea id="content" v-model="articleForm.content" required rows="5"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="description">Resumo</label>
               <textarea id="description" v-model="articleForm.description" required rows="5"></textarea>
             </div>
 
@@ -240,11 +250,13 @@ const articleForm = ref({
   id: null as string | null,
   title: '',
   description: '',
+  content:'',
   category: '',
   readTime: '',
   image: '',
   date: '',
-  tags: ''
+  tags: '',
+  slug:''
 });
 
 onMounted(() => {
@@ -347,6 +359,8 @@ const resetForm = () => {
     category: '',
     readTime: '',
     image: '',
+    content: '',
+    slug: '',
     date: new Date().toLocaleDateString('pt-BR'),
     tags: ''
   };
