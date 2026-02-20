@@ -75,7 +75,9 @@ export interface Roadmap {
     title: string;
     description: string;
     topics: string[];
+    learningObjectives?: string[];
     projectSuggestion?: string;
+    prerequisites?: string[];
     estimatedHours: number;
     dependsOn?: string[];
   }>;
@@ -138,8 +140,87 @@ class ApiGeminiService {
     return this.post<GeneratedTutorial>('/v1/gemini/generate-tutorial', request);
   }
 
-  async generateRoadmap(request: RoadmapRequest): Promise<Roadmap> {
-    return this.post<Roadmap>('/v1/gemini/generate-roadmap', request);
+  async generateRoadmap(request: RoadmapRequest & { skills?: string[] }): Promise<Roadmap> {
+    // Lista de skills do usuário para o prompt
+    const userSkillsText = request.skills && request.skills.length ? request.skills.join(', ') : 'Nenhuma';
+
+    const prompt = `Gere um roadmap de aprendizado para o objetivo: "${request.goal}".
+    
+    Contexto:
+    - Cargo atual: ${request.currentRole || 'Iniciante'}
+    - Prazo: ${request.months} meses
+    - Persona do mentor: ${request.persona || 'Tech Lead Sênior'}
+    - Habilidades que o usuário JÁ POSSUI: ${userSkillsText}
+    
+    Requisitos:
+    - Se o usuário já possui habilidades essenciais para o objetivo, NÃO crie etapas redundantes para ensinar o básico disso (ex: se sabe Git, não crie etapa "Aprender Git").
+    - Identifique dependências claras entre as etapas.
+    - Crie 5 a 8 etapas principais que cubram o GAP entre o que ele sabe e o objetivo final.
+    - Cada etapa deve ter uma lista de "learningObjectives" e um array de "tags" (tecnologias ensinadas).
+    - IMPORTANTE: Identifique "prerequisites" (tags de habilidades) que são necessárias para começar a etapa, mas que NÃO são ensinadas nela (ex: saber 'html' antes de 'react').
+    
+    Formato de Saída OBRIGATÓRIO (JSON puro):
+    {
+      "id": "roadmap_${Date.now()}",
+      "title": "Roadmap para ${request.goal}",
+      "overview": "Visão geral...",
+      "totalMonths": ${request.months},
+      "resources": ["Recurso 1"],
+      "steps": [
+        {
+          "id": "step_1",
+          "title": "Título...",
+          "description": "...",
+          "topics": ["React", "Hooks"],
+          "tags": ["react", "frontend"], 
+          "prerequisites": ["html", "css", "javascript"],
+          "learningObjectives": ["Objetivo 1"],
+          "projectSuggestion": "...",
+          "estimatedHours": 20,
+          "dependsOn": [] 
+        }
+      ]
+    }`;
+    
+    const response = await this.post<{ text: string }>('/v1/gemini/generate-text', { prompt });
+    
+    let jsonString = response.text;
+    if (jsonString.includes('```json')) {
+      jsonString = jsonString.split('```json')[1].split('```')[0];
+    } else if (jsonString.includes('```')) {
+      jsonString = jsonString.split('```')[1].split('```')[0];
+    }
+    
+    try {
+      const parsedRoadmap = JSON.parse(jsonString.trim());
+      
+      // SANITIZAÇÃO DE SEGURANÇA
+      // Garante que não existam dependências fantasmas (IDs que não existem)
+      if (parsedRoadmap.steps && Array.isArray(parsedRoadmap.steps)) {
+        const existingIds = new Set(parsedRoadmap.steps.map((s: any) => s.id));
+        
+        parsedRoadmap.steps = parsedRoadmap.steps.map((step: any) => {
+          // Garante arrays
+          if (!step.topics) step.topics = [];
+          if (!step.learningObjectives) step.learningObjectives = [];
+          if (!step.tags) step.tags = [];
+          
+          // Limpa dependências inválidas
+          if (step.dependsOn && Array.isArray(step.dependsOn)) {
+            step.dependsOn = step.dependsOn.filter((depId: string) => existingIds.has(depId));
+          } else {
+            step.dependsOn = [];
+          }
+          
+          return step;
+        });
+      }
+
+      return parsedRoadmap;
+    } catch (e) {
+      console.error('Falha ao gerar roadmap estruturado', e);
+      throw new Error('Erro ao processar o roadmap gerado pela IA.');
+    }
   }
 
   async generateProjectSuggestion(technologies: string[], level: string, persona?: string): Promise<ProjectSuggestion> {
@@ -152,6 +233,52 @@ class ApiGeminiService {
 
   async analyzeSkills(request: SkillsAnalysisRequest): Promise<any> {
     return this.post<any>('/v1/gemini/analyze-skills', request);
+  }
+
+  async generateStepQuiz(topic: string, difficulty: string, persona?: string): Promise<any> {
+    // Como o endpoint específico pode não existir no backend ainda, vamos usar o generate-text com um prompt estruturado
+    // e fazer o parse manual, ou assumir que existe um endpoint genérico JSON.
+    // Para garantir funcionamento, vou usar um prompt que pede JSON estrito.
+    
+    const prompt = `Crie um Quiz estilo ENEM com 5 perguntas de múltipla escolha (A, B, C, D, E) sobre o tema: "${topic}".
+    
+    Contexto:
+    - Persona do avaliador: ${persona || 'Professor Especialista'}
+    - Nível de dificuldade: ${difficulty}
+    
+    Formato de Saída OBRIGATÓRIO (JSON Array puro):
+    [
+      {
+        "id": 1,
+        "question": "Texto da pergunta...",
+        "options": {
+          "A": "Opção A",
+          "B": "Opção B",
+          "C": "Opção C",
+          "D": "Opção D",
+          "E": "Opção E"
+        },
+        "correctOption": "C",
+        "explanation": "Explicação detalhada do porquê a resposta está correta e dicas sobre o conceito."
+      }
+    ]`;
+
+    const response = await this.post<{ text: string }>('/v1/gemini/generate-text', { prompt });
+    
+    // Tratamento para extrair JSON caso venha com markdown ```json ... ```
+    let jsonString = response.text;
+    if (jsonString.includes('```json')) {
+      jsonString = jsonString.split('```json')[1].split('```')[0];
+    } else if (jsonString.includes('```')) {
+      jsonString = jsonString.split('```')[1].split('```')[0];
+    }
+    
+    try {
+      return JSON.parse(jsonString.trim());
+    } catch (e) {
+      console.error('Falha ao fazer parse do Quiz', e);
+      throw new Error('Não foi possível gerar o quiz corretamente. Tente novamente.');
+    }
   }
 
   async generateText(prompt: string): Promise<string> {

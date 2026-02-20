@@ -15,7 +15,9 @@ export interface Roadmap {
     title: string;
     description: string;
     topics: string[];
+    learningObjectives?: string[];
     projectSuggestion?: string;
+    prerequisites?: string[]; // Habilidades externas necessárias
     estimatedHours: number;
     dependsOn?: string[];
     completed?: boolean;      // marcado pelo usuário
@@ -23,6 +25,13 @@ export interface Roadmap {
     generatedArticleId?: string;
     generatedTutorialId?: string;
     generatedProjectId?: string;
+    quiz?: {
+      passed: boolean;
+      score: number;
+      attempts: number;
+      lastAttemptDate?: string;
+    };
+    tags?: string[];
   }>;
   totalMonths: number;
   resources: string[];
@@ -49,8 +58,11 @@ interface PortfolioState {
   contact:           any;
   activePortfolioId: string | null;
   activePortfolioSlug: string | null;
-  roadmap:           Roadmap | null;           // roadmap ativo
+  roadmap:           Roadmap | null;           // (Legado - manter por compatibilidade breve)
+  roadmaps:          Roadmap[];                // Lista de todos os objetivos
+  currentRoadmapId:  string | null;            // ID do roadmap sendo visualizado
   softSkills:        SoftSkills | null;        // soft skills analisadas
+  userSkills:        string[];                 // Lista simples de tags/skills que o usuário possui
 }
 
 export const usePortfoliosStore = defineStore('portfolios', {
@@ -65,10 +77,20 @@ export const usePortfoliosStore = defineStore('portfolios', {
     activePortfolioId: null,
     activePortfolioSlug: null,
     roadmap:           null,
+    roadmaps:          [],
+    currentRoadmapId:  null,
     softSkills:        null,
+    userSkills:        [], // Ex: ['git', 'javascript', 'vue']
   }),
 
   getters: {
+    // Retorna o roadmap atual baseado no ID selecionado ou o primeiro da lista
+    currentRoadmap: (state) => {
+      if (state.currentRoadmapId) {
+        return state.roadmaps.find(r => r.id === state.currentRoadmapId) || state.roadmap;
+      }
+      return state.roadmap || (state.roadmaps.length > 0 ? state.roadmaps[0] : null);
+    },
     getArticleBySlug:  (state) => (slug: string) => state.articles.find((a: any) => a.slug === slug),
     getTutorialBySlug: (state) => (slug: string) => state.tutorials.find((t: any) => t.slug === slug),
     getLatestArticles: (state) => (limit = 3) =>
@@ -93,6 +115,16 @@ export const usePortfoliosStore = defineStore('portfolios', {
       this.about       = payload.about       || null;
       this.contact     = payload.contact     || null;
       this.roadmap     = payload.roadmap     || null;
+      // Compatibilidade: Se vier roadmaps (lista), usa. Se vier só roadmap (objeto), põe na lista.
+      if (payload.roadmaps && Array.isArray(payload.roadmaps)) {
+        this.roadmaps = payload.roadmaps;
+      } else if (payload.roadmap) {
+        this.roadmaps = [payload.roadmap];
+      } else {
+        this.roadmaps = [];
+      }
+      
+      this.userSkills  = payload.userSkills  || [];
       this.softSkills  = payload.softSkills  || null;
     },
 
@@ -240,10 +272,40 @@ export const usePortfoliosStore = defineStore('portfolios', {
       if (!this.activePortfolioId) throw new Error('Nenhum portfólio ativo.');
       const ui = useUiStore();
       ui.setLoading(true);
+      
       try {
-        const updated = { ...roadmap, updatedAt: new Date().toISOString() };
-        await set(ref(db, `portfolios_content/${this.activePortfolioId}/roadmap`), updated);
-        this.roadmap = updated;
+        const cleanSteps = roadmap.steps.map(step => {
+           const s: any = { ...step };
+           Object.keys(s).forEach(key => s[key] === undefined && delete s[key]);
+           return s;
+        });
+
+        const updatedRoadmap = { 
+           ...roadmap, 
+           steps: cleanSteps,
+           updatedAt: new Date().toISOString() 
+        };
+        
+        // Atualiza a lista local
+        const index = this.roadmaps.findIndex(r => r.id === roadmap.id);
+        if (index !== -1) {
+          this.roadmaps[index] = updatedRoadmap;
+        } else {
+          this.roadmaps.push(updatedRoadmap);
+        }
+        
+        // Define como atual se for novo
+        if (!this.currentRoadmapId) {
+          this.currentRoadmapId = updatedRoadmap.id;
+        }
+
+        // Salva a lista completa e o roadmap legado para compatibilidade
+        await update(ref(db, `portfolios_content/${this.activePortfolioId}`), {
+          roadmaps: this.roadmaps,
+          roadmap: updatedRoadmap // Mantém o último modificado como 'principal' legado por enquanto
+        });
+
+        this.roadmap = updatedRoadmap;
       } catch (error: any) {
         ui.setError(error.message);
         throw error;
@@ -252,23 +314,49 @@ export const usePortfoliosStore = defineStore('portfolios', {
       }
     },
 
-    async updateStepCompletion(stepId: string, completed: boolean, meta?: { articleId?: string; tutorialId?: string; projectId?: string }) {
-      if (!this.roadmap) return;
-      const steps = this.roadmap.steps.map(step => {
+    async addUserSkill(skill: string) {
+      if (!this.activePortfolioId) return;
+      if (this.userSkills.includes(skill)) return;
+      
+      const newSkills = [...this.userSkills, skill];
+      this.userSkills = newSkills;
+      
+      await update(ref(db, `portfolios_content/${this.activePortfolioId}`), {
+        userSkills: newSkills
+      });
+    },
+
+    async updateStepCompletion(stepId: string, completed: boolean, meta: { articleId?: string; tutorialId?: string; projectId?: string; quizResult?: any } = {}) {
+      const current = this.currentRoadmap;
+      if (!current) return;
+      
+      const steps = current.steps.map(step => {
         if (step.id === stepId) {
-          return {
-            ...step,
-            completed,
-            completedAt: completed ? new Date().toISOString() : undefined,
-            generatedArticleId: meta?.articleId || step.generatedArticleId,
-            generatedTutorialId: meta?.tutorialId || step.generatedTutorialId,
-            generatedProjectId: meta?.projectId || step.generatedProjectId,
-          };
+          const updatedStep = { ...step };
+          updatedStep.completed = completed;
+          
+          if (completed) {
+             updatedStep.completedAt = new Date().toISOString();
+          } else {
+             delete updatedStep.completedAt;
+          }
+
+          if (meta.articleId) updatedStep.generatedArticleId = meta.articleId;
+          if (meta.tutorialId) updatedStep.generatedTutorialId = meta.tutorialId;
+          if (meta.projectId) updatedStep.generatedProjectId = meta.projectId;
+          if (meta.quizResult) updatedStep.quiz = meta.quizResult;
+          
+          return updatedStep;
         }
         return step;
       });
-      const updatedRoadmap = { ...this.roadmap, steps };
+      
+      const updatedRoadmap = { ...current, steps };
       await this.saveRoadmap(updatedRoadmap);
+    },
+
+    setCurrentRoadmapId(id: string) {
+      this.currentRoadmapId = id;
     },
 
     async saveSoftSkills(analysis: any) {
