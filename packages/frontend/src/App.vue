@@ -6,23 +6,26 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, provide } from 'vue';
-import { useStore } from 'vuex';
-import TheToast from '@/components/TheToast.vue';
+import { onMounted, ref, provide } from "vue";
+import { useUiStore } from "@/stores/ui";
+import TheToast from "@/components/TheToast.vue";
 
-const store = useStore();
-const toast = ref();
+const uiStore = useUiStore();
+const toast   = ref<InstanceType<typeof TheToast> | null>(null);
 
-const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info', title: string = 'Notification') => {
+const showToast = (
+  message: string,
+  type: "success" | "error" | "warning" | "info" = "info",
+  title = "Notification"
+) => {
   if (toast.value) {
     toast.value.addToast({ message, type, title });
   }
 };
 
-provide('showToast', showToast);
+provide("showToast", showToast);
 
 onMounted(() => {
-  store.dispatch('ui/loadTheme');
-  //store.dispatch('fetchPortfolioData'); // Assuming this is now handled in components or view logic
+  uiStore.loadTheme();
 });
 </script>

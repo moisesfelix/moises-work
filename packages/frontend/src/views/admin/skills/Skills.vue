@@ -145,211 +145,91 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useStore } from 'vuex';
-import { apiGeminiService } from '@/services/api.gemini.service';
+import { ref, computed, onMounted } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
+import { useUiStore }         from "@/stores/ui";
+import { apiGeminiService }   from "@/services/api.gemini.service";
 
-const store = useStore();
-const skills = computed(() => store.state.portfolios.skills);
-const loading = computed(() => store.state.ui.isLoading);
+const portfoliosStore      = usePortfoliosStore();
+const uiStore              = useUiStore();
+const skills               = computed(() => portfoliosStore.skills);
+const loading              = computed(() => uiStore.isLoading);
+const showCategoryDialog   = ref(false);
+const showToolDialog       = ref(false);
+const showAIResultDialog   = ref(false);
+const analyzing            = ref(false);
+const aiResults            = ref<any>({});
+const categoryForm         = ref({ name: "" });
+const toolForm             = ref({ category: "", name: "", percent: 80, isEditing: false, originalName: "" });
 
-const showCategoryDialog = ref(false);
-const showToolDialog = ref(false);
-const showAIResultDialog = ref(false);
-const analyzing = ref(false);
-const aiResults = ref<any>({});
-
-const categoryForm = ref({ name: '' });
-const toolForm = ref({
-  category: '',
-  name: '',
-  percent: 80,
-  isEditing: false,
-  originalName: ''
-});
-
-onMounted(() => {
-  store.dispatch('portfolios/fetchPortfolioData');
-});
+onMounted(() => portfoliosStore.fetchPortfolioData());
 
 const analyzeSkillsWithAI = async () => {
   analyzing.value = true;
   try {
-    const experiences = store.state.portfolios.experiences || [];
-    const projects = store.state.portfolios.projects || [];
-    const articles = store.state.portfolios.articles || [];
-    const tutorials = store.state.portfolios.tutorials || [];
-    
-    if (experiences.length === 0 && projects.length === 0 && articles.length === 0 && tutorials.length === 0) {
-      alert("Adicione experiências, projetos, artigos ou tutoriais primeiro para que a IA possa analisar.");
-      return;
+    const { experiences, projects, articles, tutorials } = portfoliosStore;
+    if (!experiences.length && !projects.length && !articles.length && !tutorials.length) {
+      alert("Adicione conteúdo primeiro."); return;
     }
-
-    const result = await apiGeminiService.analyzeSkills({ experiences, projects, articles, tutorials });
-    aiResults.value = result;
+    aiResults.value = await apiGeminiService.analyzeSkills({ experiences, projects, articles, tutorials });
     showAIResultDialog.value = true;
-  } catch (error) {
-    console.error("Erro na análise de IA:", error);
-    alert("Falha ao analisar habilidades com IA.");
-  } finally {
-    analyzing.value = false;
-  }
+  } catch { alert("Falha ao analisar habilidades com IA."); }
+  finally   { analyzing.value = false; }
 };
 
 const saveAISkills = async () => {
-  if (skills.value) {
-    try {
-      const historyKey = `skills_history/${Date.now()}`;
-      await store.dispatch('portfolios/saveData', { type: historyKey, data: JSON.parse(JSON.stringify(skills.value)) });
-    } catch (historyError) {
-      console.error('Failed to save skills history:', historyError);
-    }
-  }
-
   const newSkills: any = {};
-  
-  for (const [rawCategory, tools] of Object.entries(aiResults.value)) {
-    const category = rawCategory.replace(/[.#$/[\]]/g, '-');
-
-    if (!newSkills[category]) {
-      newSkills[category] = [];
-    }
-    
-    (tools as any[]).forEach((tool: any) => {
-      newSkills[category].push({
-        name: tool.name,
-        percent: tool.percent
-      });
-    });
+  for (const [cat, tools] of Object.entries(aiResults.value)) {
+    newSkills[cat.replace(/[.#$/[\]]/g, "-")] = (tools as any[]).map((t: any) => ({ name: t.name, percent: t.percent }));
   }
-
-  try {
-    await store.dispatch('portfolios/saveData', { type: 'skills', data: newSkills });
-    showAIResultDialog.value = false;
-    alert("Habilidades substituídas com sucesso pela IA!");
-  } catch (error) {
-    console.error('Error saving AI skills:', error);
-    alert('Erro ao salvar habilidades da IA.');
-  }
+  try { await portfoliosStore.saveData({ type: "skills", data: newSkills }); showAIResultDialog.value = false; alert("Habilidades salvas!"); }
+  catch { alert("Erro ao salvar habilidades."); }
 };
 
-const openAddCategoryDialog = () => {
-  categoryForm.value.name = '';
-  showCategoryDialog.value = true;
-};
+const openAddCategoryDialog = () => { categoryForm.value.name = ""; showCategoryDialog.value = true; };
 
 const saveCategory = async () => {
   if (!categoryForm.value.name) return;
+  const newSkills = { ...JSON.parse(JSON.stringify(skills.value || {})), [categoryForm.value.name]: { _isEmpty: true } };
+  await portfoliosStore.saveData({ type: "skills", data: newSkills });
+  closeDialogs();
+};
 
-  const currentSkills = JSON.parse(JSON.stringify(skills.value || {}));
-  const newSkills = { ...currentSkills, [categoryForm.value.name]: { _isEmpty: true } };
-
-  try {
-    await store.dispatch('portfolios/saveData', { type: 'skills', data: newSkills });
-    closeDialogs();
-  } catch (error) {
-    console.error('Error saving category:', error);
-    alert('Erro ao salvar categoria.');
+const deleteCategory = async (cat: string) => {
+  if (confirm(`Excluir "${cat}"?`)) {
+    const s = JSON.parse(JSON.stringify(skills.value || {}));
+    delete s[cat];
+    await portfoliosStore.saveData({ type: "skills", data: s });
   }
 };
 
-const deleteCategory = async (category: string) => {
-  if (confirm(`Tem certeza que deseja excluir a categoria "${category}" e todas as suas ferramentas?`)) {
-    const newSkills = JSON.parse(JSON.stringify(skills.value || {}));
-    delete newSkills[category];
-    try {
-      await store.dispatch('portfolios/saveData', { type: 'skills', data: newSkills });
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      alert('Erro ao excluir categoria.');
-    }
-  }
-};
-
-const openAddToolDialog = (category: string) => {
-  toolForm.value = {
-    category,
-    name: '',
-    percent: 80,
-    isEditing: false,
-    originalName: ''
-  };
-  showToolDialog.value = true;
-};
-
-const openEditToolDialog = (category: string, tool: { name: string, percent: number }) => {
-  toolForm.value = {
-    category,
-    name: tool.name,
-    percent: tool.percent,
-    isEditing: true,
-    originalName: tool.name
-  };
-  showToolDialog.value = true;
-};
+const openAddToolDialog  = (cat: string) => { toolForm.value = { category: cat, name: "", percent: 80, isEditing: false, originalName: "" }; showToolDialog.value = true; };
+const openEditToolDialog = (cat: string, tool: { name: string; percent: number }) => { toolForm.value = { category: cat, name: tool.name, percent: tool.percent, isEditing: true, originalName: tool.name }; showToolDialog.value = true; };
 
 const saveTool = async () => {
   const { category, name, percent, isEditing, originalName } = toolForm.value;
   if (!category || !name) return;
-
-  const newSkills = JSON.parse(JSON.stringify(skills.value || {}));
-  let currentCategoryData = newSkills[category];
-  
-  // Handle empty placeholder or undefined
-  let tools: any[] = [];
-  if (Array.isArray(currentCategoryData)) {
-    tools = [...currentCategoryData];
-  }
-
-  if (isEditing) {
-    const toolIndex = tools.findIndex((t: any) => t.name === originalName);
-    if (toolIndex !== -1) {
-      tools[toolIndex] = { name, percent };
-    }
-  } else {
-    tools.push({ name, percent });
-  }
-
-  newSkills[category] = tools;
-
-  try {
-    await store.dispatch('portfolios/saveData', { type: 'skills', data: newSkills });
-    closeDialogs();
-  } catch (error) {
-    console.error('Error saving tool:', error);
-    alert('Erro ao salvar ferramenta.');
-  }
+  const s: any = JSON.parse(JSON.stringify(skills.value || {}));
+  let tools: any[] = Array.isArray(s[category]) ? [...s[category]] : [];
+  if (isEditing) { const idx = tools.findIndex((t: any) => t.name === originalName); if (idx !== -1) tools[idx] = { name, percent }; }
+  else tools.push({ name, percent });
+  s[category] = tools;
+  await portfoliosStore.saveData({ type: "skills", data: s });
+  closeDialogs();
 };
 
-const deleteTool = async (category: string, toolName: string) => {
-  if (confirm(`Excluir a ferramenta "${toolName}" da categoria "${category}"?`)) {
-    const newSkills = JSON.parse(JSON.stringify(skills.value || {}));
-    const currentCategoryData = newSkills[category];
-    
-    if (Array.isArray(currentCategoryData)) {
-      const tools = currentCategoryData.filter((t: {name: string}) => t.name !== toolName);
-      
-      if (tools.length === 0) {
-        newSkills[category] = { _isEmpty: true };
-      } else {
-        newSkills[category] = tools;
-      }
-
-      try {
-        await store.dispatch('portfolios/saveData', { type: 'skills', data: newSkills });
-      } catch (error) {
-        console.error('Error deleting tool:', error);
-        alert('Erro ao excluir ferramenta.');
-      }
+const deleteTool = async (cat: string, toolName: string) => {
+  if (confirm(`Excluir "${toolName}"?`)) {
+    const s: any = JSON.parse(JSON.stringify(skills.value || {}));
+    if (Array.isArray(s[cat])) {
+      const t = s[cat].filter((x: any) => x.name !== toolName);
+      s[cat] = t.length ? t : { _isEmpty: true };
+      await portfoliosStore.saveData({ type: "skills", data: s });
     }
   }
 };
 
-const closeDialogs = () => {
-  showCategoryDialog.value = false;
-  showToolDialog.value = false;
-  showAIResultDialog.value = false;
-};
+const closeDialogs = () => { showCategoryDialog.value = false; showToolDialog.value = false; showAIResultDialog.value = false; };
 </script>
 
 <style scoped>

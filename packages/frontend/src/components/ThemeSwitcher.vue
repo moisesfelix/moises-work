@@ -5,17 +5,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useStore } from 'vuex';
+import { computed } from "vue";
+import { useUiStore } from "@/stores/ui";
 
-const store = useStore();
-
-const isDarkMode = computed(() => store.state.ui.currentTheme === 'dark');
-const nextTheme = computed(() => isDarkMode.value ? 'light' : 'dark');
-
-const toggleTheme = () => {
-  store.dispatch('ui/toggleTheme');
-};
+const uiStore    = useUiStore();
+const isDarkMode = computed(() => uiStore.currentTheme === "dark");
+const nextTheme  = computed(() => (isDarkMode.value ? "light" : "dark"));
+const toggleTheme = () => uiStore.toggleTheme();
 </script>
 
 <style scoped>

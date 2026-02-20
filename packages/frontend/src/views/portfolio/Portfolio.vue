@@ -29,30 +29,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useStore } from 'vuex';
-import ProjectCard from '@/components/ProjectCard.vue';
+import { ref, computed } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
+import ProjectCard from "@/components/ProjectCard.vue";
 
-const store = useStore();
-const activeFilter = ref('all');
-
-const projects = computed(() => store.state.portfolios.projects || []);
+const portfoliosStore = usePortfoliosStore();
+const activeFilter    = ref("all");
+const projects        = computed(() => portfoliosStore.projects || []);
 
 const filters = [
-  { label: 'Todos', value: 'all' },
-  { label: 'Web', value: 'web' },
-  { label: 'Mobile', value: 'mobile' },
-  { label: 'IA', value: 'ai' },
+  { label: "Todos",  value: "all"    },
+  { label: "Web",    value: "web"    },
+  { label: "Mobile", value: "mobile" },
+  { label: "IA",     value: "ai"     },
 ];
 
 const filteredProjects = computed(() => {
-  if (activeFilter.value === 'all') return projects.value;
-  const filter = activeFilter.value.toLowerCase();
+  if (activeFilter.value === "all") return projects.value;
+  const f = activeFilter.value.toLowerCase();
   return projects.value.filter((p: any) => {
-     // Check category or tags
-     const cat = (p.category || '').toLowerCase();
-     const tags = (p.tags || []).map((t: string) => t.toLowerCase());
-     return cat.includes(filter) || tags.includes(filter);
+    const cat  = (p.category || "").toLowerCase();
+    const tags = (p.tags || []).map((t: string) => t.toLowerCase());
+    return cat.includes(f) || tags.includes(f);
   });
 });
 </script>

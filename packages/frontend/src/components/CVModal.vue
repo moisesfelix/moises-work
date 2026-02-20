@@ -85,129 +85,78 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
-import { useStore } from 'vuex';
+import { ref, computed, watch } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
 
-const props = defineProps<{
-  show: boolean;
-}>();
+const props = defineProps<{ show: boolean }>();
+const emit  = defineEmits<{ close: [] }>();
 
-const emit = defineEmits<{
-  close: [];
-}>();
+const portfoliosStore = usePortfoliosStore();
+const about       = computed(() => portfoliosStore.about);
+const skills      = computed(() => portfoliosStore.skills);
+const projects    = computed(() => portfoliosStore.projects);
+const experiences = computed(() => portfoliosStore.experiences);
+const contact     = computed(() => portfoliosStore.contact);
 
-const store = useStore();
-const about = computed(() => store.state.portfolios.about);
-const skills = computed(() => store.state.portfolios.skills);
-const projects = computed(() => store.state.portfolios.projects);
-const experiences = computed(() => store.state.portfolios.experiences);
-const contact = computed(() => store.state.portfolios.contact);
+const generating     = ref(false);
+const avatarBase64   = ref<string>("");
+const closeModal     = () => emit("close");
 
-const generating = ref(false);
-const avatarBase64 = ref<string>('');
-
-const closeModal = () => {
-  emit('close');
-};
-
-// Converte imagem para Base64 usando canvas (resolve problema de CORS no html2pdf)
 const convertImageToBase64 = async (url: string): Promise<void> => {
   return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = url + (url.includes('?') ? '&' : '?') + new Date().getTime(); // cache bust
-
-    img.onload = () => {
+    const img       = new Image();
+    img.crossOrigin = "anonymous";
+    img.src         = url + (url.includes("?") ? "&" : "?") + Date.now();
+    img.onload  = () => {
       try {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.naturalWidth;
+        const canvas = document.createElement("canvas");
+        canvas.width  = img.naturalWidth;
         canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return reject('Canvas context error');
-
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject("Canvas context error");
         ctx.drawImage(img, 0, 0);
-        avatarBase64.value = canvas.toDataURL('image/jpeg', 0.98);
+        avatarBase64.value = canvas.toDataURL("image/jpeg", 0.98);
         resolve();
-      } catch (e) {
-        console.warn('Falha ao converter imagem para base64 (CORS ou outro erro)', e);
-        reject(e);
-      }
+      } catch (e) { reject(e); }
     };
-
-    img.onerror = () => {
-      console.warn('Erro ao carregar imagem para conversão base64');
-      reject();
-    };
+    img.onerror = () => reject();
   });
 };
 
-// Converte a imagem sempre que o modal abrir e houver uma URL de imagem
-watch(
-  () => props.show,
-  async (newVal) => {
-    if (newVal && about.value?.image && !avatarBase64.value) {
-      try {
-        await convertImageToBase64(about.value.image);
-      } catch (e) {
-        // Fallback: mantém a URL original se não conseguir converter
-      }
-    }
-    // Reseta base64 ao fechar
-    if (!newVal) {
-      avatarBase64.value = '';
-    }
-  },
-  { immediate: true }
-);
+watch(() => props.show, async (val) => {
+  if (val && about.value?.image && !avatarBase64.value) {
+    try { await convertImageToBase64(about.value.image); } catch (_) {}
+  }
+  if (!val) avatarBase64.value = "";
+}, { immediate: true });
 
 const loadHtml2Pdf = (): Promise<any> => {
   return new Promise((resolve, reject) => {
-    if ((window as any).html2pdf) {
-      resolve((window as any).html2pdf);
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-    script.onload = () => resolve((window as any).html2pdf);
-    script.onerror = reject;
+    if ((window as any).html2pdf) { resolve((window as any).html2pdf); return; }
+    const script    = document.createElement("script");
+    script.src      = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js";
+    script.onload   = () => resolve((window as any).html2pdf);
+    script.onerror  = reject;
     document.head.appendChild(script);
   });
 };
 
 const generatePDF = async () => {
   generating.value = true;
-
   try {
-    const element = document.getElementById('cv-content');
-    if (!element) throw new Error('Elemento não encontrado');
-
+    const element = document.getElementById("cv-content");
+    if (!element) throw new Error("Elemento não encontrado");
     const html2pdf = await loadHtml2Pdf();
-
-    const options = {
+    await html2pdf().set({
       margin: [10, 10, 10, 10],
-      filename: `curriculo-${(about.value?.title || 'profissional').toLowerCase().replace(/\s+/g, '-')}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        letterRendering: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff'
-      },
-      jsPDF: {
-        unit: 'mm',
-        format: 'a4',
-        orientation: 'portrait',
-        compress: true
-      },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    };
-
-    await html2pdf().set(options).from(element).save();
+      filename: `curriculo-${(about.value?.title || "profissional").toLowerCase().replace(/\s+/g, "-")}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false, backgroundColor: "#ffffff" },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait", compress: true },
+      pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+    }).from(element).save();
   } catch (error) {
-    console.error('Erro ao gerar PDF:', error);
-    alert('Erro ao gerar o PDF. Tente novamente ou verifique se a imagem do avatar permite CORS.');
+    alert("Erro ao gerar o PDF. Tente novamente.");
   } finally {
     generating.value = false;
   }

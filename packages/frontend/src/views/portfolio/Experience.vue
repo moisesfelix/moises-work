@@ -21,9 +21,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useStore } from 'vuex';
+import { computed } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
 
-const store = useStore();
-const experiences = computed(() => store.state.portfolios.experiences);
+const portfoliosStore = usePortfoliosStore();
+const experiences     = computed(() => portfoliosStore.experiences);
 </script>

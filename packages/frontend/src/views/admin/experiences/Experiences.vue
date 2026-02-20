@@ -114,137 +114,75 @@
 
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
-import { useStore } from 'vuex';
-import { v4 as uuidv4 } from 'uuid';
-import { apiGeminiService } from '@/services/api.gemini.service';
+import { ref, computed, onMounted, watch } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
+import { useUiStore }         from "@/stores/ui";
+import { apiGeminiService }   from "@/services/api.gemini.service";
+import { v4 as uuidv4 }       from "uuid";
 
-const store = useStore();
-const experiences = computed(() => store.state.portfolios.experiences || []);
-const loading = computed(() => store.state.ui.isLoading);
+const portfoliosStore = usePortfoliosStore();
+const uiStore         = useUiStore();
+const experiences     = computed(() => portfoliosStore.experiences || []);
+const loading         = computed(() => uiStore.isLoading);
 
 const showExperienceDialog = ref(false);
-const editingExperience = ref<any>(null);
-const tagsInput = ref('');
-const aiEnabled = ref(false);
-const aiPrompt = ref('');
-const generating = ref(false);
+const editingExperience    = ref<any>(null);
+const tagsInput            = ref("");
+const aiEnabled            = ref(false);
+const aiPrompt             = ref("");
+const generating           = ref(false);
 
 const experienceForm = ref({
-  id: null as string | null,
-  date: '',
-  title: '',
-  company: '',
-  description: '',
-  tags: [] as string[]
+  id:          null as string | null,
+  date:        "",
+  title:       "",
+  company:     "",
+  description: "",
+  tags:        [] as string[],
 });
 
-onMounted(() => {
-  store.dispatch('portfolios/fetchPortfolioData');
-});
+onMounted(() => portfoliosStore.fetchPortfolioData());
+watch(editingExperience, (v) => { tagsInput.value = v?.tags ? v.tags.join(", ") : ""; });
 
-watch(editingExperience, (newVal) => {
-  if (newVal && newVal.tags) {
-    tagsInput.value = newVal.tags.join(', ');
-  } else {
-    tagsInput.value = '';
-  }
-});
-
-const openAddExperienceDialog = () => {
-  editingExperience.value = null;
-  resetForm();
-  showExperienceDialog.value = true;
-};
-
-const openEditExperienceDialog = (exp: any) => {
-  editingExperience.value = exp;
-  experienceForm.value = { ...exp };
-  showExperienceDialog.value = true;
-};
-
-const closeExperienceDialog = () => {
-  showExperienceDialog.value = false;
-  editingExperience.value = null;
-  resetForm();
-};
-
-const resetForm = () => {
-  tagsInput.value = '';
-  aiEnabled.value = false;
-  aiPrompt.value = '';
-  experienceForm.value = {
-    id: null,
-    date: '',
-    title: '',
-    company: '',
-    description: '',
-    tags: []
-  };
-};
+const openAddExperienceDialog  = () => { editingExperience.value = null; resetForm(); showExperienceDialog.value = true; };
+const openEditExperienceDialog = (exp: any) => { editingExperience.value = exp; experienceForm.value = { ...exp }; showExperienceDialog.value = true; };
+const closeExperienceDialog    = () => { showExperienceDialog.value = false; editingExperience.value = null; resetForm(); };
+const resetForm = () => { tagsInput.value = ""; aiEnabled.value = false; aiPrompt.value = ""; experienceForm.value = { id: null, date: "", title: "", company: "", description: "", tags: [] }; };
 
 const saveExperience = async () => {
-  let updatedExperiences = [...experiences.value];
-  experienceForm.value.tags = tagsInput.value.split(',').map(tag => tag.trim()).filter(tag => tag);
-  const formData = { ...experienceForm.value };
-
+  experienceForm.value.tags = tagsInput.value.split(",").map((t) => t.trim()).filter(Boolean);
+  const data = { ...experienceForm.value };
+  let list   = [...experiences.value];
   if (editingExperience.value) {
-    const index = updatedExperiences.findIndex(e => e.id === formData.id);
-    if (index !== -1) updatedExperiences[index] = formData;
+    const idx = list.findIndex((e: any) => e.id === data.id);
+    if (idx !== -1) list[idx] = data;
   } else {
-    formData.id = uuidv4();
-    updatedExperiences.push(formData);
+    data.id = uuidv4();
+    list.push(data);
   }
-
-  await store.dispatch('portfolios/saveData', { type: 'experiences', data: updatedExperiences });
+  await portfoliosStore.saveData({ type: "experiences", data: list });
   closeExperienceDialog();
 };
 
 const handleDeleteExperience = async (exp: any) => {
-  if (confirm(`Excluir a experiência "${exp.title}"?`)) {
-    const updatedExperiences = experiences.value.filter((e: any) => e.id !== exp.id);
-    await store.dispatch('portfolios/saveData', { type: 'experiences', data: updatedExperiences });
+  if (confirm(`Excluir "${exp.title}"?`)) {
+    await portfoliosStore.saveData({ type: "experiences", data: experiences.value.filter((e: any) => e.id !== exp.id) });
   }
 };
 
 const generateDescription = async () => {
-  if (!aiPrompt.value.trim()) {
-    alert('Por favor, insira um prompt para a IA.');
-    return;
-  }
-  
+  if (!aiPrompt.value.trim()) { alert("Insira um prompt para a IA."); return; }
   generating.value = true;
-  
   try {
-    // Prompt refinado com instruções negativas e de formato
-    const prompt = `Atue como um redator profissional de currículos. 
-    Com base no texto abaixo, escreva uma ÚNICA descrição concisa e profissional de experiência profissional.
-    
-    REGRAS ESTRITAS:
-    1. Não use formatação Markdown (sem asteriscos, sem negrito).
-    2. Não use listas ou bullet points.
-    3. Retorne APENAS o texto da descrição, sem introduções, sem opções e sem comentários.
-    4. Use no máximo duas frases.
-
-    Texto base: "${aiPrompt.value}"`;
-
-    const generatedText = await apiGeminiService.generateText(prompt);
-    
-    // Limpeza adicional via Regex (opcional, para garantir que não venham asteriscos residuais)
-    experienceForm.value.description = generatedText.replace(/[*#_]/g, '').trim();
-    
-  } catch (error) {
-    console.error("AI Error:", error);
-    alert('Falha ao gerar descrição.');
-  } finally {
-    generating.value = false;
-  }
+    const result = await apiGeminiService.generateText(
+      `Redator de currículos profissional. Com base em: "${aiPrompt.value}", escreva uma descrição concisa (máximo 2 frases, sem Markdown).`
+    );
+    experienceForm.value.description = result.replace(/[*#_]/g, "").trim();
+  } catch { alert("Falha ao gerar descrição."); }
+  finally   { generating.value = false; }
 };
 
-const truncateText = (text: string, length: number) => {
-  if (!text) return '';
-  return text.length > length ? text.substring(0, length) + '...' : text;
-};
+const truncateText = (text: string, length: number) => !text ? "" : text.length > length ? text.substring(0, length) + "..." : text;
 </script>
 
 <style scoped>

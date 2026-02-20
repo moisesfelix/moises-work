@@ -64,63 +64,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-import type { User } from 'firebase/auth';
-import ThemeSwitcher from './ThemeSwitcher.vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useStore } from 'vuex';
+import { ref, computed, onMounted } from "vue";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import type { User } from "firebase/auth";
+import ThemeSwitcher from "./ThemeSwitcher.vue";
+import { useRouter, useRoute } from "vue-router";
+import { usePortfoliosStore } from "@/stores/portfolios";
 
-const mobileMenuActive = ref(false);
+const mobileMenuActive    = ref(false);
 const adminDropdownActive = ref(false);
-const isLoggedIn = ref(false);
-const user = ref<User | null>(null);
-const mobileMenuIcon = computed(() => mobileMenuActive.value ? 'fas fa-times' : 'fas fa-bars');
-const auth = getAuth();
-const router = useRouter();
-const route = useRoute();
-const store = useStore();
+const isLoggedIn          = ref(false);
+const user                = ref<User | null>(null);
+const auth                = getAuth();
+const router              = useRouter();
+const route               = useRoute();
+const portfoliosStore     = usePortfoliosStore();
 
-const slug = computed(() => {
-    // Basic check to see if we are in a portfolio route
-    return route.params.slug as string;
-});
-
-const portfolioTitle = computed(() => {
-    // If we are viewing a portfolio, show its title/owner name instead of generic logo if available
-    return store.state.portfolios.about?.title || 'Meu Portfólio';
-});
+const slug           = computed(() => route.params.slug as string);
+const portfolioTitle = computed(() => portfoliosStore.about?.title || "Meu Portfólio");
+const mobileMenuIcon = computed(() => (mobileMenuActive.value ? "fas fa-times" : "fas fa-bars"));
 
 onMounted(() => {
-    onAuthStateChanged(auth, (currentUser) => {
-        isLoggedIn.value = !!currentUser;
-        user.value = currentUser;
-    });
+  onAuthStateChanged(auth, (u) => {
+    isLoggedIn.value = !!u;
+    user.value       = u;
+  });
 });
 
 const toggleMobileMenu = () => {
-    mobileMenuActive.value = !mobileMenuActive.value;
-    document.body.style.overflow = mobileMenuActive.value ? 'hidden' : 'auto';
+  mobileMenuActive.value        = !mobileMenuActive.value;
+  document.body.style.overflow  = mobileMenuActive.value ? "hidden" : "auto";
 };
-
-const closeMobileMenu = () => {
-    mobileMenuActive.value = false;
-    document.body.style.overflow = 'auto';
-};
-
-const toggleAdminDropdown = () => {
-    adminDropdownActive.value = !adminDropdownActive.value;
-};
-
-const closeAdminDropdown = () => {
-    adminDropdownActive.value = false;
-};
-
-const logout = async () => {
-  await signOut(auth);
-  closeAdminDropdown();
-  router.push('/');
-};
+const closeMobileMenu  = () => { mobileMenuActive.value = false; document.body.style.overflow = "auto"; };
+const toggleAdminDropdown = () => { adminDropdownActive.value = !adminDropdownActive.value; };
+const closeAdminDropdown  = () => { adminDropdownActive.value = false; };
+const logout = async () => { await signOut(auth); closeAdminDropdown(); router.push("/"); };
 </script>
 
 

@@ -235,191 +235,77 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useStore } from 'vuex';
-import { v4 as uuidv4 } from 'uuid';
-import { storageService } from '@/services/storage.service';
+import { ref, computed, onMounted } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
+import { useUiStore }         from "@/stores/ui";
+import { useAiStore }         from "@/stores/ai";
+import { storageService }     from "@/services/storage.service";
+import { v4 as uuidv4 }       from "uuid";
 
-const store = useStore();
-const tutorials = computed(() => store.state.portfolios.tutorials || []);
-const loading = computed(() => store.state.ui.isLoading);
-
-// Flags de Estado
-const showAIModal = ref(false);
+const portfoliosStore   = usePortfoliosStore();
+const uiStore           = useUiStore();
+const aiStore           = useAiStore();
+const tutorials         = computed(() => portfoliosStore.tutorials || []);
+const loading           = computed(() => uiStore.isLoading);
+const showAIModal       = ref(false);
 const showTutorialDialog = ref(false);
-const editingTutorial = ref<any>(null);
-const generating = ref(false);
-const generatingStatus = ref('');
-const isUploading = ref(false);
-const uploadError = ref<string | null>(null);
-const fileInput = ref<HTMLInputElement | null>(null);
-const placeholderImage = 'https://via.placeholder.com/150';
+const editingTutorial   = ref<any>(null);
+const generating        = ref(false);
+const generatingStatus  = ref("");
+const isUploading       = ref(false);
+const uploadError       = ref<string | null>(null);
+const fileInput         = ref<HTMLInputElement | null>(null);
+const placeholderImage  = "https://via.placeholder.com/150";
 
-// Forms
-const aiForm = ref({
-  topic: '',
-  category: '',
-  difficulty: 'Iniciante',
-  duration: ''
-});
+const aiForm = ref({ topic: "", category: "", difficulty: "Iniciante", duration: "" });
 
 const tutorialForm = ref({
-  id: null as string | null,
-  title: '',
-  slug: '',
-  category: '',
-  duration: '',
-  difficulty: 'Iniciante',
-  image: '',
-  excerpt: '',
-  steps: '', // Pode ser string JSON ou HTML
-  tags: ''
+  id: null as string | null, title: "", slug: "", category: "",
+  duration: "", difficulty: "Iniciante", image: "", excerpt: "", steps: "", tags: "",
 });
 
-onMounted(() => {
-  store.dispatch('portfolios/fetchPortfolioData');
-});
+onMounted(() => portfoliosStore.fetchPortfolioData());
 
-// --- Upload Manual de Imagem ---
 const handleImageUpload = async (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-
+  const file = (event.target as HTMLInputElement).files?.[0];
   if (!file) return;
-
-  if (!file.type.startsWith('image/')) {
-    uploadError.value = "Apenas imagens são permitidas.";
-    return;
-  }
-
-  isUploading.value = true;
-  uploadError.value = null;
-
-  try {
-    const downloadURL = await storageService.uploadImage(file, 'tutorials');
-    tutorialForm.value.image = downloadURL;
-  } catch (error) {
-    console.error("Erro upload:", error);
-    uploadError.value = "Falha no envio da imagem.";
-  } finally {
-    isUploading.value = false;
-    if (target) target.value = '';
-  }
+  if (!file.type.startsWith("image/")) { uploadError.value = "Apenas imagens."; return; }
+  isUploading.value = true; uploadError.value = null;
+  try { tutorialForm.value.image = await storageService.uploadImage(file, "tutorials"); }
+  catch { uploadError.value = "Falha no envio."; }
+  finally { isUploading.value = false; }
 };
+const removeImage = () => { tutorialForm.value.image = ""; };
 
-const removeImage = () => {
-  tutorialForm.value.image = '';
-};
-
-// --- Modal IA ---
-const openAIModal = () => {
-  aiForm.value = { topic: '', category: '', difficulty: 'Iniciante', duration: '' };
-  showAIModal.value = true;
-};
-
-const closeAIModal = () => {
-  if (!generating.value) showAIModal.value = false;
-};
+const openAIModal  = () => { aiForm.value = { topic: "", category: "", difficulty: "Iniciante", duration: "" }; showAIModal.value = true; };
+const closeAIModal = () => { if (!generating.value) showAIModal.value = false; };
 
 const generateTutorial = async () => {
-  generating.value = true;
-  generatingStatus.value = 'Planejando conteúdo...';
-
-  try {
-    // Chama a action no Vuex (que deve usar geminiService.generateTutorial)
-    await store.dispatch('ai/generateTutorialWithAI', aiForm.value);
-
-    closeAIModal();
-    alert('Tutorial gerado com sucesso!');
-  } catch (error: any) {
-    alert('Erro ao gerar tutorial: ' + error.message);
-  } finally {
-    generating.value = false;
-  }
+  generating.value = true; generatingStatus.value = "Planejando conteúdo...";
+  try { await aiStore.generateTutorialWithAI(aiForm.value); closeAIModal(); alert("Tutorial gerado!"); }
+  catch (e: any) { alert("Erro: " + e.message); }
+  finally { generating.value = false; }
 };
 
-// --- CRUD Manual ---
-const openAddTutorialDialog = () => {
-  editingTutorial.value = null;
-  resetForm();
-  showTutorialDialog.value = true;
-};
-
-const openEditTutorialDialog = (tutorial: any) => {
-  editingTutorial.value = tutorial;
-  // Clona o objeto para o form
-  tutorialForm.value = {
-    ...tutorial,
-    // Se steps for objeto/array, converte para string para edição no textarea simples
-    steps: typeof tutorial.steps === 'object' ? JSON.stringify(tutorial.steps, null, 2) : tutorial.steps,
-    tags: tutorial.tags ? tutorial.tags.join(', ') : ''
-  };
-  showTutorialDialog.value = true;
-};
-
-const closeTutorialDialog = () => {
-  showTutorialDialog.value = false;
-  editingTutorial.value = null;
-  resetForm();
-};
-
-const resetForm = () => {
-  uploadError.value = null;
-  isUploading.value = false;
-  tutorialForm.value = {
-    id: null,
-    title: '',
-    slug: '',
-    category: '',
-    duration: '',
-    difficulty: 'Iniciante',
-    image: '',
-    excerpt: '',
-    steps: '',
-    tags: ''
-  };
-};
+const openAddTutorialDialog  = () => { editingTutorial.value = null; resetForm(); showTutorialDialog.value = true; };
+const openEditTutorialDialog = (t: any) => { editingTutorial.value = t; tutorialForm.value = { ...t, steps: typeof t.steps === "object" ? JSON.stringify(t.steps, null, 2) : t.steps, tags: t.tags ? t.tags.join(", ") : "" }; showTutorialDialog.value = true; };
+const closeTutorialDialog    = () => { showTutorialDialog.value = false; editingTutorial.value = null; resetForm(); };
+const resetForm = () => { uploadError.value = null; isUploading.value = false; tutorialForm.value = { id: null, title: "", slug: "", category: "", duration: "", difficulty: "Iniciante", image: "", excerpt: "", steps: "", tags: "" }; };
 
 const saveTutorial = async () => {
-  let updatedTutorials = [...tutorials.value];
-  const formData = {
-    ...tutorialForm.value,
-    tags: tutorialForm.value.tags ? tutorialForm.value.tags.split(',').map(tag => tag.trim()) : []
-  };
-
-  // Tratamento básico para steps (se for JSON válido, parseia, senão salva string)
-  try {
-    formData.steps = JSON.parse(formData.steps);
-  } catch (e) {
-    // Mantém como string se não for JSON
-  }
-
-  if (editingTutorial.value) {
-    const index = updatedTutorials.findIndex(t => t.id === formData.id);
-    if (index !== -1) updatedTutorials[index] = formData;
-  } else {
-    formData.id = uuidv4();
-    updatedTutorials.push(formData);
-  }
-
-  await store.dispatch('portfolios/saveData', { type: 'tutorials', data: updatedTutorials });
+  const data: any = { ...tutorialForm.value, tags: tutorialForm.value.tags ? tutorialForm.value.tags.split(",").map((t) => t.trim()) : [] };
+  try { data.steps = JSON.parse(data.steps); } catch {}
+  let list = [...tutorials.value];
+  if (editingTutorial.value) { const idx = list.findIndex((t: any) => t.id === data.id); if (idx !== -1) list[idx] = data; }
+  else { data.id = uuidv4(); list.push(data); }
+  await portfoliosStore.saveData({ type: "tutorials", data: list });
   closeTutorialDialog();
 };
 
 const handleDeleteTutorial = async (tutorial: any) => {
-  if (confirm(`Excluir o tutorial "${tutorial.title}"?`)) {
-    // 1. Remove imagem do Firebase se existir
-    if (tutorial.image && tutorial.image.includes('firebase')) {
-      try {
-        await storageService.deleteImage(tutorial.image);
-      } catch (e) {
-        console.warn('Erro ao deletar imagem', e);
-      }
-    }
-
-    // 2. Remove dados
-    const updatedTutorials = tutorials.value.filter((t: any) => t.id !== tutorial.id);
-    await store.dispatch('portfolios/saveData', { type: 'tutorials', data: updatedTutorials });
+  if (confirm(`Excluir "${tutorial.title}"?`)) {
+    if (tutorial.image?.includes("firebase")) try { await storageService.deleteImage(tutorial.image); } catch {}
+    await portfoliosStore.saveData({ type: "tutorials", data: tutorials.value.filter((t: any) => t.id !== tutorial.id) });
   }
 };
 </script>

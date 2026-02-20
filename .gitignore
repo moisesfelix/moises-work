@@ -22,6 +22,9 @@ yarn-error.log*
 # Output
 output.txt
 output-*.txt
+analise-*.txt
+upgrade-*.sh
+gerar_*.sh
 
 # Firebase
 .firebase/

@@ -25,22 +25,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useStore } from 'vuex';
+import { computed } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
 
-const store = useStore();
-
-const about = computed(() => store.state.portfolios.about);
-const projects = computed(() => store.state.portfolios.projects);
-const articles = computed(() => store.state.portfolios.articles);
-const tutorials = computed(() => store.state.portfolios.tutorials);
-const skills = computed(() => store.state.portfolios.skills);
-const experiences = computed(() => store.state.portfolios.experiences);
-
-const projectsCount = computed(() => projects.value?.length || 0);
-const skillsCategoriesCount = computed(() => skills.value ? Object.keys(skills.value).length : 0);
-const experienceCount = computed(() => experiences.value?.length || 0);
-const contentCount = computed(() => (articles.value?.length || 0) + (tutorials.value?.length || 0));
+const portfoliosStore     = usePortfoliosStore();
+const projectsCount       = computed(() => portfoliosStore.projects?.length || 0);
+const skillsCount         = computed(() => portfoliosStore.skills ? Object.keys(portfoliosStore.skills).length : 0);
+const experienceCount     = computed(() => portfoliosStore.experiences?.length || 0);
+const contentCount        = computed(() => (portfoliosStore.articles?.length || 0) + (portfoliosStore.tutorials?.length || 0));
 </script>
 
 <style scoped>

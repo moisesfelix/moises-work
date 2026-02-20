@@ -23,34 +23,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue';
-import { useStore } from 'vuex';
-import { useRoute } from 'vue-router';
-import TheHeader from '@/components/TheHeader.vue';
-import TheFooter from '@/components/TheFooter.vue';
+import { computed, onMounted, watch } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
+import { useUiStore }         from "@/stores/ui";
+import { useRoute } from "vue-router";
+import TheHeader from "@/components/TheHeader.vue";
+import TheFooter from "@/components/TheFooter.vue";
 
-const store = useStore();
-const route = useRoute();
+const portfoliosStore = usePortfoliosStore();
+const uiStore         = useUiStore();
+const route           = useRoute();
 
-const slug = computed(() => route.params.slug as string);
-const loading = computed(() => store.state.ui.isLoading);
-const error = computed(() => store.state.ui.error);
+const slug    = computed(() => route.params.slug as string);
+const loading = computed(() => uiStore.isLoading);
+const error   = computed(() => uiStore.error);
 
 const loadPortfolio = async () => {
-  if (slug.value) {
-    // If slug is present, fetch data.
-    // If we are navigating between pages of SAME portfolio, check activePortfolioId/slug mismatch?
-    // fetchPortfolioData handles slug resolution.
-    console.log("Loading portfolio for slug:", slug.value);
-    await store.dispatch('portfolios/fetchPortfolioData', slug.value);
-  }
+  if (slug.value) await portfoliosStore.fetchPortfolioData(slug.value);
 };
 
-onMounted(() => {
-    // Force immediate load
-    loadPortfolio();
-});
-
+onMounted(() => loadPortfolio());
 watch(slug, loadPortfolio);
 </script>
 

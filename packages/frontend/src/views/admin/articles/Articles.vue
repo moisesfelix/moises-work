@@ -217,187 +217,87 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useStore } from 'vuex';
-import { v4 as uuidv4 } from 'uuid';
-// Certifique-se que o caminho está correto
-import { storageService } from '@/services/storage.service';
+import { ref, computed, onMounted } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
+import { useUiStore }         from "@/stores/ui";
+import { useAiStore }         from "@/stores/ai";
+import { storageService }     from "@/services/storage.service";
+import { v4 as uuidv4 }       from "uuid";
 
-const store = useStore();
-const articles = computed(() => store.state.portfolios.articles || []);
-const loading = computed(() => store.state.ui.isLoading);
+const portfoliosStore    = usePortfoliosStore();
+const uiStore            = useUiStore();
+const aiStore            = useAiStore();
+const articles           = computed(() => portfoliosStore.articles || []);
+const loading            = computed(() => uiStore.isLoading);
+const showAIModal        = ref(false);
+const showArticleDialog  = ref(false);
+const editingArticle     = ref<any>(null);
+const generating         = ref(false);
+const generatingStatus   = ref("");
+const isUploading        = ref(false);
+const uploadError        = ref<string | null>(null);
+const fileInput          = ref<HTMLInputElement | null>(null);
+const placeholderImage   = "https://via.placeholder.com/50";
 
-const showAIModal = ref(false);
-const showArticleDialog = ref(false);
-const editingArticle = ref<any>(null);
-
-// Estados de Upload/Geração
-const generating = ref(false);
-const generatingStatus = ref('');
-const isUploading = ref(false);
-const uploadError = ref<string | null>(null);
-const fileInput = ref<HTMLInputElement | null>(null);
-const placeholderImage = 'https://via.placeholder.com/50';
-
-const aiForm = ref({
-  topic: '',
-  category: '',
-  length: 'medium',
-  tone: 'profissional e educativo'
-});
+const aiForm = ref({ topic: "", category: "", length: "medium", tone: "profissional e educativo" });
 
 const articleForm = ref({
-  id: null as string | null,
-  title: '',
-  description: '',
-  content:'',
-  category: '',
-  readTime: '',
-  image: '',
-  date: '',
-  tags: '',
-  slug:''
+  id: null as string | null, title: "", description: "", content: "",
+  category: "", readTime: "", image: "", date: "", tags: "", slug: "",
 });
 
-onMounted(() => {
-  store.dispatch('portfolios/fetchPortfolioData');
-});
+onMounted(() => portfoliosStore.fetchPortfolioData());
 
-// --- Métodos de Upload de Imagem ---
 const handleImageUpload = async (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-
+  const file = (event.target as HTMLInputElement).files?.[0];
   if (!file) return;
-
-  if (!file.type.startsWith('image/')) {
-    uploadError.value = "Selecione apenas arquivos de imagem.";
-    return;
-  }
-
-  isUploading.value = true;
-  uploadError.value = null;
-
-  try {
-    // Upload para a pasta 'articles'
-    const downloadURL = await storageService.uploadImage(file, 'articles');
-    articleForm.value.image = downloadURL;
-  } catch (error) {
-    console.error("Erro upload:", error);
-    uploadError.value = "Erro ao enviar imagem.";
-  } finally {
-    isUploading.value = false;
-    if (target) target.value = ''; // Reset input
-  }
+  if (!file.type.startsWith("image/")) { uploadError.value = "Selecione apenas imagens."; return; }
+  isUploading.value = true; uploadError.value = null;
+  try { articleForm.value.image = await storageService.uploadImage(file, "articles"); }
+  catch { uploadError.value = "Erro ao enviar imagem."; }
+  finally { isUploading.value = false; }
 };
+const removeImage = () => { articleForm.value.image = ""; };
 
-const removeImage = () => {
-  articleForm.value.image = '';
-};
+const truncateText = (text: string, length: number) => !text ? "" : text.length > length ? text.substring(0, length) + "..." : text;
 
-const truncateText = (text: string, length: number) => {
-  if (!text) return '';
-  return text.length > length ? text.substring(0, length) + '...' : text;
-};
-// -----------------------------------
-
-// --- Lógica Modal IA ---
-const openAIModal = () => {
-  aiForm.value = { topic: '', category: '', length: 'medium', tone: 'profissional' };
-  showAIModal.value = true;
-};
-
-const closeAIModal = () => {
-  if (!generating.value) showAIModal.value = false;
-};
+const openAIModal  = () => { aiForm.value = { topic: "", category: "", length: "medium", tone: "profissional" }; showAIModal.value = true; };
+const closeAIModal = () => { if (!generating.value) showAIModal.value = false; };
 
 const generateArticle = async () => {
   generating.value = true;
   try {
-    generatingStatus.value = 'Gerando texto...';
-    // Simula delay ou chamada real
-    await new Promise(resolve => setTimeout(resolve, 800));
-    generatingStatus.value = 'Criando imagem...';
-
-    await store.dispatch('ai/generateArticleWithAI', aiForm.value);
-
+    generatingStatus.value = "Gerando texto...";
+    await aiStore.generateArticleWithAI(aiForm.value);
     closeAIModal();
-    // Opcional: mostrar toast de sucesso
-  } catch (error: any) {
-    alert('Erro: ' + error.message);
-  } finally {
-    generating.value = false;
-  }
+  } catch (e: any) { alert("Erro: " + e.message); }
+  finally { generating.value = false; }
 };
 
-// --- Lógica Modal Manual ---
-const openAddArticleDialog = () => {
-  editingArticle.value = null;
-  resetForm();
-  showArticleDialog.value = true;
-};
-
-const openEditArticleDialog = (article: any) => {
-  editingArticle.value = article;
-  articleForm.value = { ...article, tags: article.tags ? article.tags.join(', ') : '' };
-  showArticleDialog.value = true;
-};
-
-const closeArticleDialog = () => {
-  showArticleDialog.value = false;
-  editingArticle.value = null;
-  resetForm();
-};
-
-const resetForm = () => {
-  uploadError.value = null;
-  isUploading.value = false;
-  articleForm.value = {
-    id: null,
-    title: '',
-    description: '',
-    category: '',
-    readTime: '',
-    image: '',
-    content: '',
-    slug: '',
-    date: new Date().toLocaleDateString('pt-BR'),
-    tags: ''
-  };
-};
+const openAddArticleDialog  = () => { editingArticle.value = null; resetForm(); showArticleDialog.value = true; };
+const openEditArticleDialog = (a: any) => { editingArticle.value = a; articleForm.value = { ...a, tags: a.tags ? a.tags.join(", ") : "" }; showArticleDialog.value = true; };
+const closeArticleDialog    = () => { showArticleDialog.value = false; editingArticle.value = null; resetForm(); };
+const resetForm = () => { uploadError.value = null; isUploading.value = false; articleForm.value = { id: null, title: "", description: "", category: "", readTime: "", image: "", content: "", slug: "", date: new Date().toLocaleDateString("pt-BR"), tags: "" }; };
 
 const saveArticle = async () => {
-  let updatedArticles = [...articles.value];
-  const formData = { ...articleForm.value, tags: articleForm.value.tags ? articleForm.value.tags.split(',').map(tag => tag.trim()) : [] };
-
+  const data: any = { ...articleForm.value, tags: articleForm.value.tags ? articleForm.value.tags.split(",").map((t) => t.trim()) : [] };
+  let list = [...articles.value];
   if (editingArticle.value) {
-    const index = updatedArticles.findIndex(a => a.id === formData.id);
-    if (index !== -1) updatedArticles[index] = formData;
+    const idx = list.findIndex((a: any) => a.id === data.id);
+    if (idx !== -1) list[idx] = data;
   } else {
-    formData.id = uuidv4();
-    formData.date = new Date().toLocaleDateString('pt-BR');
-    updatedArticles.push(formData);
+    data.id   = uuidv4();
+    data.date = new Date().toLocaleDateString("pt-BR");
+    list.push(data);
   }
-
-  // Aqui você chama a action do Vuex para salvar no Firestore/State
-  await store.dispatch('portfolios/saveData', { type: 'articles', data: updatedArticles });
+  await portfoliosStore.saveData({ type: "articles", data: list });
   closeArticleDialog();
 };
 
 const handleDeleteArticle = async (article: any) => {
   if (confirm(`Excluir "${article.title}"?`)) {
-    // 1. Tenta deletar imagem do storage se existir e for do firebase
-    if (article.image && article.image.includes('firebase')) {
-      try {
-        await storageService.deleteImage(article.image);
-      } catch (e) {
-        console.warn('Erro ao deletar imagem do storage', e);
-      }
-    }
-
-    // 2. Deleta o registro do banco
-    const updatedArticles = articles.value.filter((a: any) => a.id !== article.id);
-    await store.dispatch('portfolios/saveData', { type: 'articles', data: updatedArticles });
+    if (article.image?.includes("firebase")) try { await storageService.deleteImage(article.image); } catch {}
+    await portfoliosStore.saveData({ type: "articles", data: articles.value.filter((a: any) => a.id !== article.id) });
   }
 };
 </script>

@@ -11,39 +11,32 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useStore } from 'vuex';
+import { defineComponent } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useAuthStore }       from "@/stores/auth";
+import { usePortfoliosStore } from "@/stores/portfolios";
 
 export default defineComponent({
-  name: 'Login',
+  name: "Login",
   setup() {
-    const router = useRouter();
-    const route = useRoute();
-    const store = useStore();
+    const router          = useRouter();
+    const route           = useRoute();
+    const authStore       = useAuthStore();
+    const portfoliosStore = usePortfoliosStore();
 
     const handleGoogleLogin = async () => {
       try {
-        await store.dispatch('auth/loginWithGoogle');
-        // Check if user has a portfolio, if not create/assign one
-        const result = await store.dispatch('portfolios/initializeUserPortfolio');
-        
-        let redirect = route.query?.redirectedFrom as string || '/admin/dashboard';
-        
-        // If it's a new portfolio, redirect to About page to setup profile
-        if (result && result.isNew) {
-            redirect = '/admin/about';
-        }
-        
+        await authStore.loginWithGoogle();
+        const result   = await portfoliosStore.initializeUserPortfolio();
+        let redirect   = (route.query?.redirectedFrom as string) || "/admin/dashboard";
+        if (result?.isNew) redirect = "/admin/about";
         router.push(redirect);
       } catch (error: any) {
-        alert('Falha no login: ' + error.message);
+        alert("Falha no login: " + error.message);
       }
     };
 
-    return {
-      handleGoogleLogin,
-    };
+    return { handleGoogleLogin };
   },
 });
 </script>

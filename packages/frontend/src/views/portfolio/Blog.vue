@@ -28,13 +28,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useStore } from 'vuex';
-import { useRoute } from 'vue-router';
-const route = useRoute();
+import { computed } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
+import { useRoute } from "vue-router";
 
-const store = useStore();
-const articles = computed(() => store.state.portfolios.articles);
-const currentSlug = computed(() => route.params.slug);
-
+const route           = useRoute();
+const portfoliosStore = usePortfoliosStore();
+const articles        = computed(() => portfoliosStore.articles);
+const currentSlug     = computed(() => route.params.slug);
 </script>

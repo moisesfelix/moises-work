@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useStore } from 'vuex';
-import TheHeader from '../components/TheHeader.vue';
-import TheFooter from '../components/TheFooter.vue';
+import { computed } from "vue";
+import { useAuthStore } from "@/stores/auth";
+import TheHeader from "../components/TheHeader.vue";
+import TheFooter from "../components/TheFooter.vue";
 
-const store = useStore();
-const isAuthenticated = computed(() => store.getters['auth/isAuthenticated']);
+const authStore       = useAuthStore();
+const isAuthenticated = computed(() => authStore.isAuthenticated);
 </script>
 
 <template>

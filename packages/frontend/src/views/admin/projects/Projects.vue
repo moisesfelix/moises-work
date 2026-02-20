@@ -132,135 +132,64 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useStore } from 'vuex';
-import { v4 as uuidv4 } from 'uuid';
-import { storageService } from '@/services/storage.service';
+import { ref, computed, onMounted } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
+import { storageService }      from "@/services/storage.service";
+import { v4 as uuidv4 }        from "uuid";
 
-const store = useStore();
-const projects = computed(() => store.state.portfolios.projects);
-
+const portfoliosStore  = usePortfoliosStore();
+const projects         = computed(() => portfoliosStore.projects);
 const showProjectDialog = ref(false);
-const editingProject = ref<any>(null);
-const isUploading = ref(false);
-const uploadError = ref<string | null>(null);
-const placeholderImage = 'https://via.placeholder.com/50';
-const fileInput = ref<HTMLInputElement | null>(null);
+const editingProject   = ref<any>(null);
+const isUploading      = ref(false);
+const uploadError      = ref<string | null>(null);
+const placeholderImage = "https://via.placeholder.com/50";
+const fileInput        = ref<HTMLInputElement | null>(null);
 
 const projectForm = ref({
-  id: null as string | null,
-  title: '',
-  description: '',
-  image: '',
-  tags: '',
-  category: '',
-  githubUrl: '',
-  articleUrl: '',
-  tutorialUrl: ''
+  id: null as string | null, title: "", description: "", image: "",
+  tags: "", category: "", githubUrl: "", articleUrl: "", tutorialUrl: "",
 });
 
-onMounted(() => {
-  store.dispatch('portfolios/fetchPortfolioData');
-});
+onMounted(() => portfoliosStore.fetchPortfolioData());
 
-const truncateText = (text: string, length: number) => {
-  if (!text) return '';
-  return text.length > length ? text.substring(0, length) + '...' : text;
-};
+const truncateText = (text: string, length: number) => !text ? "" : text.length > length ? text.substring(0, length) + "..." : text;
 
 const handleImageUpload = async (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
+  const file = (event.target as HTMLInputElement).files?.[0];
   if (!file) return;
-
-  if (!file.type.startsWith('image/')) {
-    uploadError.value = "Por favor, selecione apenas arquivos de imagem.";
-    return;
-  }
-
-  isUploading.value = true;
-  uploadError.value = null;
-
-  try {
-    const downloadURL = await storageService.uploadImage(file, 'projects');
-    projectForm.value.image = downloadURL;
-  } catch (error) {
-    console.error("Erro no upload:", error);
-    uploadError.value = "Falha ao enviar imagem. Tente novamente.";
-  } finally {
-    isUploading.value = false;
-    if (target) target.value = '';
-  }
+  if (!file.type.startsWith("image/")) { uploadError.value = "Selecione apenas imagens."; return; }
+  isUploading.value = true; uploadError.value = null;
+  try { projectForm.value.image = await storageService.uploadImage(file, "projects"); }
+  catch { uploadError.value = "Falha ao enviar imagem."; }
+  finally { isUploading.value = false; }
 };
 
-const removeImage = () => {
-  projectForm.value.image = '';
-};
+const removeImage = () => { projectForm.value.image = ""; };
 
-const openAddProjectDialog = () => {
-  editingProject.value = null;
-  resetForm();
-  showProjectDialog.value = true;
-};
-
-const openEditProjectDialog = (project: any) => {
-  editingProject.value = project;
-  projectForm.value = { ...project, tags: project.tags ? project.tags.join(', ') : '' };
-  showProjectDialog.value = true;
-};
-
-const closeProjectDialog = () => {
-  showProjectDialog.value = false;
-  editingProject.value = null;
-  resetForm();
-};
-
-const resetForm = () => {
-  isUploading.value = false;
-  uploadError.value = null;
-  projectForm.value = {
-    id: null,
-    title: '',
-    description: '',
-    image: '',
-    tags: '',
-    category: '',
-    githubUrl: '',
-    articleUrl: '',
-    tutorialUrl: ''
-  };
-};
+const openAddProjectDialog  = () => { editingProject.value = null; resetForm(); showProjectDialog.value = true; };
+const openEditProjectDialog = (p: any) => { editingProject.value = p; projectForm.value = { ...p, tags: p.tags ? p.tags.join(", ") : "" }; showProjectDialog.value = true; };
+const closeProjectDialog    = () => { showProjectDialog.value = false; editingProject.value = null; resetForm(); };
+const resetForm = () => { isUploading.value = false; uploadError.value = null; projectForm.value = { id: null, title: "", description: "", image: "", tags: "", category: "", githubUrl: "", articleUrl: "", tutorialUrl: "" }; };
 
 const saveProject = async () => {
-  const projectData = { ...projectForm.value, tags: projectForm.value.tags ? projectForm.value.tags.split(',').map(tag => tag.trim()) : [] };
-  let updatedProjects = [...projects.value];
-
+  const data: any = { ...projectForm.value, tags: projectForm.value.tags ? projectForm.value.tags.split(",").map((t) => t.trim()) : [] };
+  let list = [...projects.value];
   if (editingProject.value) {
-    const index = updatedProjects.findIndex(p => p.id === projectData.id);
-    if (index !== -1) {
-      updatedProjects[index] = projectData;
-    }
+    const idx = list.findIndex((p: any) => p.id === data.id);
+    if (idx !== -1) list[idx] = data;
   } else {
-    projectData.id = uuidv4();
-    updatedProjects.push(projectData);
+    data.id = uuidv4();
+    list.push(data);
   }
-
-  await store.dispatch('portfolios/saveData', { type: 'projects', data: updatedProjects });
+  await portfoliosStore.saveData({ type: "projects", data: list });
   closeProjectDialog();
 };
 
 const deleteProject = async (project: any) => {
-  if (confirm('Tem certeza que deseja excluir este projeto?')) {
-    if (project.image) {
-      try {
-        await storageService.deleteImage(project.image);
-      } catch (e) {
-        console.warn('Não foi possível deletar a imagem do storage, prosseguindo com a exclusão do registro.');
-      }
-    }
-
-    const updatedProjects = projects.value.filter((p: any) => p.id !== project.id);
-    await store.dispatch('portfolios/saveData', { type: 'projects', data: updatedProjects });
+  if (confirm("Excluir este projeto?")) {
+    if (project.image) try { await storageService.deleteImage(project.image); } catch {}
+    await portfoliosStore.saveData({ type: "projects", data: projects.value.filter((p: any) => p.id !== project.id) });
   }
 };
 </script>

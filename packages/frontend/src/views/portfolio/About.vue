@@ -25,31 +25,23 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useStore } from 'vuex';
-import CVModal from '@/components/CVModal.vue';
+import { ref, computed } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
+import CVModal from "@/components/CVModal.vue";
 
-const store = useStore();
-const about = computed(() => store.state.portfolios.about);
-const contact = computed(() => store.state.portfolios.contact);
-const showCVModal = ref(false);
+const portfoliosStore = usePortfoliosStore();
+const about           = computed(() => portfoliosStore.about);
+const contact         = computed(() => portfoliosStore.contact);
+const showCVModal     = ref(false);
 
-const openCVModal = () => {
-  showCVModal.value = true;
-};
-
-const closeCVModal = () => {
-  showCVModal.value = false;
-};
+const openCVModal  = () => { showCVModal.value = true; };
+const closeCVModal = () => { showCVModal.value = false; };
 
 const openWhatsapp = () => {
-  if (contact.value && contact.value.whatsapp) {
-    window.open(contact.value.whatsapp, '_blank');
+  if (contact.value?.whatsapp) {
+    window.open(contact.value.whatsapp, "_blank");
   } else {
-    const contactSection = document.getElementById('contact');
-    if (contactSection) {
-      contactSection.scrollIntoView({ behavior: 'smooth' });
-    }
+    document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
   }
 };
 </script>

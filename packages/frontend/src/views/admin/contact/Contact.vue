@@ -37,30 +37,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useStore } from 'vuex';
+import { ref, onMounted } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
 
-const store = useStore();
-const loading = computed(() => store.state.ui.isLoading);
+const portfoliosStore = usePortfoliosStore();
 
 const contactForm = ref({
-  email: '',
-  phone: '',
-  whatsapp: '',
-  linkedin: '',
-  github: ''
+  email:    "",
+  phone:    "",
+  whatsapp: "",
+  linkedin: "",
+  github:   "",
 });
 
 onMounted(async () => {
-  await store.dispatch('portfolios/fetchPortfolioData');
-  if (store.state.portfolios.contact) {
-    contactForm.value = { ...store.state.portfolios.contact };
-  }
+  await portfoliosStore.fetchPortfolioData();
+  if (portfoliosStore.contact) contactForm.value = { ...portfoliosStore.contact };
 });
 
 const saveContactInfo = async () => {
-  await store.dispatch('portfolios/saveData', { type: 'contact', data: contactForm.value });
-  alert('Informações de contato salvas com sucesso!');
+  await portfoliosStore.saveData({ type: "contact", data: contactForm.value });
+  alert("Informações de contato salvas com sucesso!");
 };
 </script>
 

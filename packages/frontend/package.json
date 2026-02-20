@@ -14,11 +14,11 @@
     "highlight.js": "^11.8.0",
     "html2pdf.js": "^0.14.0",
     "marked": "^12.0.0",
+    "pinia": "^3.0.4",
     "shared": "file:../shared",
     "uuid": "^9.0.1",
     "vue": "^3.3.4",
-    "vue-router": "^4.2.4",
-    "vuex": "^4.1.0"
+    "vue-router": "^4.2.4"
   },
   "devDependencies": {
     "@types/node": "^20.5.9",

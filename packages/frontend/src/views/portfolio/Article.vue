@@ -67,146 +67,76 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, inject, watch, nextTick, onUnmounted } from 'vue';
-import { useStore } from 'vuex';
-import { useRoute } from 'vue-router';
-import hljs from 'highlight.js';
-import 'highlight.js/styles/atom-one-dark.css'; // Importante para o tema do código
-import { ttsService } from '@/services/tts.service';
+import { ref, computed, onMounted, inject, watch, nextTick, onUnmounted } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
+import { useRoute } from "vue-router";
+import hljs from "highlight.js";
+import "highlight.js/styles/atom-one-dark.css";
+import { ttsService } from "@/services/tts.service";
 
-const store = useStore();
-const route = useRoute();
-const showToast = inject('showToast') as (toast: { type: string; title: string; message: string; }) => void;
-
-const copiedIndex = ref<number | null>(null);
-const isSpeaking = ref(false);
-
-const currentPortfolioId = computed(() => store.state.portfolios.activePortfolioId);
-const article = computed(() => store.getters['portfolios/getArticleBySlug'](route.params.articleSlug as string));
+const portfoliosStore  = usePortfoliosStore();
+const route            = useRoute();
+const showToast        = inject("showToast") as (t: { type: string; title: string; message: string }) => void;
+const copiedIndex      = ref<number | null>(null);
+const isSpeaking       = ref(false);
+const currentPortfolioId = computed(() => portfoliosStore.activePortfolioId);
+const article          = computed(() => portfoliosStore.getArticleBySlug(route.params.articleSlug as string));
 
 const shareArticle = async () => {
-    if (!article.value || !currentPortfolioId.value) {
-        showToast({
-            type: 'error',
-            title: 'Erro',
-            message: 'Não foi possível gerar o link de compartilhamento.'
-        });
-        return;
+  if (!article.value || !currentPortfolioId.value) {
+    showToast({ type: "error", title: "Erro", message: "Não foi possível gerar o link." });
+    return;
+  }
+  const isDev    = window.location.hostname === "localhost";
+  const apiBase  = isDev
+    ? "http://127.0.0.1:5001/moises-work-app/us-central1/link"
+    : `${window.location.origin}/share`;
+  const shareUrl = `${apiBase}/${currentPortfolioId.value}/article/${(article.value as any).slug}`;
+
+  if (navigator.share) {
+    try { await navigator.share({ title: (article.value as any).title, text: (article.value as any).description || (article.value as any).excerpt, url: shareUrl }); }
+    catch (e) { console.log("Compartilhamento cancelado", e); }
+  } else {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast({ type: "success", title: "Link Copiado!", message: "Link copiado para a área de transferência." });
+    } catch {
+      showToast({ type: "error", title: "Erro", message: "Não foi possível copiar o link." });
     }
-
-    // Configuração da URL da API de compartilhamento
-    const isDev = window.location.hostname === 'localhost';
-    
-    // Se estiver em dev, assume emulador. Se estiver em prod, assume rewrite /share ou cloud function URL.
-    // Rewrite: "source": "/share/**", "function": "link"
-    const apiBase = isDev 
-        ? 'http://127.0.0.1:5001/moises-work-app/us-central1/link' 
-        : `${window.location.origin}/share`;
-
-    const shareUrl = `${apiBase}/${currentPortfolioId.value}/article/${article.value.slug}`;
-
-    if (navigator.share) {
-        try {
-            await navigator.share({
-                title: article.value.title,
-                text: article.value.description || article.value.excerpt,
-                url: shareUrl,
-            });
-        } catch (err) {
-            console.log('Compartilhamento cancelado ou erro:', err);
-        }
-    } else {
-        // Fallback para Desktop ou navegadores sem Web Share API
-        try {
-            await navigator.clipboard.writeText(shareUrl);
-            showToast({
-                type: 'success',
-                title: 'Link Copiado!',
-                message: 'Link de compartilhamento copiado para a área de transferência.'
-            });
-        } catch (err) {
-            console.error('Falha ao copiar link', err);
-            showToast({
-                type: 'error',
-                title: 'Erro',
-                message: 'Não foi possível copiar o link.'
-            });
-        }
-    }
+  }
 };
 
 const copyCode = async (code: string, index: number) => {
-    try {
-        await navigator.clipboard.writeText(code);
-        copiedIndex.value = index;
-        showToast({
-            type: 'success',
-            title: 'Copiado!',
-            message: 'Código copiado para a área de transferência!'
-        });
-        
-        setTimeout(() => {
-            copiedIndex.value = null;
-        }, 2000);
-    } catch (err) {
-        console.error('Erro ao copiar:', err);
-        showToast({
-            type: 'error',
-            title: 'Erro!',
-            message: 'Erro ao copiar o código.'
-        });
-    }
+  try {
+    await navigator.clipboard.writeText(code);
+    copiedIndex.value = index;
+    showToast({ type: "success", title: "Copiado!", message: "Código copiado!" });
+    setTimeout(() => { copiedIndex.value = null; }, 2000);
+  } catch {
+    showToast({ type: "error", title: "Erro!", message: "Erro ao copiar o código." });
+  }
 };
 
 const toggleSpeech = () => {
-    if (isSpeaking.value) {
-        ttsService.cancel();
-        isSpeaking.value = false;
-    } else {
-        if (article.value) {
-            // Remove HTML tags para leitura
-            const tempDiv = document.createElement("div");
-            tempDiv.innerHTML = article.value.content;
-            const textToRead = article.value.title + ". " + (tempDiv.textContent || tempDiv.innerText || "");
-            
-            ttsService.speak(textToRead);
-            isSpeaking.value = true;
-            
-            // Monitorar fim da fala (simplificado, idealmente o serviço emitiria eventos)
-            const checkInterval = setInterval(() => {
-                if (!ttsService.isSpeaking()) {
-                    isSpeaking.value = false;
-                    clearInterval(checkInterval);
-                }
-            }, 500);
-        }
-    }
+  if (isSpeaking.value) {
+    ttsService.cancel();
+    isSpeaking.value = false;
+  } else if (article.value) {
+    const tmp = document.createElement("div");
+    tmp.innerHTML = (article.value as any).content;
+    ttsService.speak((article.value as any).title + ". " + (tmp.textContent || ""));
+    isSpeaking.value = true;
+    const iv = setInterval(() => { if (!ttsService.isSpeaking()) { isSpeaking.value = false; clearInterval(iv); } }, 500);
+  }
 };
 
 const highlightCode = () => {
-    document.querySelectorAll('pre code').forEach((block) => {
-        hljs.highlightElement(block as HTMLElement);
-    });
+  document.querySelectorAll("pre code").forEach((b) => hljs.highlightElement(b as HTMLElement));
 };
 
-onMounted(() => {
-    if (article.value) {
-        highlightCode();
-    }
-});
-
-onUnmounted(() => {
-    // Parar fala ao sair da página
-    if (isSpeaking.value) {
-        ttsService.cancel();
-    }
-});
-
-// Garante que o highlight funcione se os dados carregarem depois da montagem
-watch(article, async () => {
-    await nextTick();
-    highlightCode();
-});
+onMounted(() => { if (article.value) highlightCode(); });
+onUnmounted(() => { if (isSpeaking.value) ttsService.cancel(); });
+watch(article, async () => { await nextTick(); highlightCode(); });
 </script>
 
 <style scoped>

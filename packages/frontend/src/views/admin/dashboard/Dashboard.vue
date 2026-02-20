@@ -68,53 +68,29 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref, onMounted, watch } from 'vue';
-import { useStore } from 'vuex';
+import { defineComponent, computed, onMounted, watch } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
+import { useAnalyticsStore }  from "@/stores/analytics";
 
 export default defineComponent({
-  name: 'Dashboard',
+  name: "Dashboard",
   setup() {
-    const store = useStore();
-    const portfolioId = computed(() => store.state.portfolios.activePortfolioId); 
-    
-    // Conectar ao novo módulo Vuex
-    const analyticsData = computed(() => store.state.analytics.data);
-    const loading = computed(() => store.state.analytics.loading);
-    
-    const analytics = computed(() => analyticsData.value?.summary || {
-      total: 0,
-      articles: 0,
-      tutorials: 0,
-      human: 0
-    });
-    
-    const topContent = computed(() => analyticsData.value?.topContent || []);
-    const referrers = computed(() => analyticsData.value?.referrers || []);
+    const portfoliosStore = usePortfoliosStore();
+    const analyticsStore  = useAnalyticsStore();
 
-    const fetchAnalytics = () => {
-      if (portfolioId.value) {
-        store.dispatch('analytics/fetchAnalytics');
-      }
-    };
+    const portfolioId = computed(() => portfoliosStore.activePortfolioId);
+    const loading     = computed(() => analyticsStore.loading);
+    const analytics   = computed(() => analyticsStore.data?.summary || { total: 0, articles: 0, tutorials: 0, human: 0 });
+    const topContent  = computed(() => analyticsStore.data?.topContent || []);
+    const referrers   = computed(() => analyticsStore.data?.referrers  || []);
 
-    onMounted(() => {
-       if (portfolioId.value) {
-         fetchAnalytics();
-       }
-    });
+    const fetchAnalytics = () => { if (portfolioId.value) analyticsStore.fetchAnalytics(); };
 
-    watch(portfolioId, (newId) => {
-      if (newId) fetchAnalytics();
-    });
+    onMounted(() => fetchAnalytics());
+    watch(portfolioId, (id) => { if (id) fetchAnalytics(); });
 
-    return {
-      portfolioId,
-      analytics,
-      topContent,
-      referrers,
-      loading
-    }
-  }
+    return { portfolioId, analytics, topContent, referrers, loading };
+  },
 });
 </script>
 

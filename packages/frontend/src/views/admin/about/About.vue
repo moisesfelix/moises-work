@@ -94,103 +94,73 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useStore } from 'vuex';
-import { storageService } from '@/services/storage.service';
-import { apiGeminiService } from '@/services/api.gemini.service';
+import { ref, computed, onMounted } from "vue";
+import { usePortfoliosStore }  from "@/stores/portfolios";
+import { useUiStore }          from "@/stores/ui";
+import { storageService }      from "@/services/storage.service";
+import { apiGeminiService }    from "@/services/api.gemini.service";
 
-const store = useStore();
-const loading = computed(() => store.state.ui.isLoading);
-const aboutData = computed(() => store.state.portfolios.about);
+const portfoliosStore = usePortfoliosStore();
+const uiStore         = useUiStore();
+const loading         = computed(() => uiStore.isLoading);
+const fileInput       = ref<HTMLInputElement | null>(null);
 
-const fileInput = ref<HTMLInputElement | null>(null);
+const aboutForm = ref({ title: "", description: "", image: "" });
 
-const aboutForm = ref({
-  title: '',
-  description: '',
-  image: ''
-});
-
-const isUploading = ref(false);
-const saving = ref(false);
-const uploadError = ref<string | null>(null);
-
-const showAIModal = ref(false);
-const aiPrompt = ref('');
-const generating = ref(false);
+const isUploading  = ref(false);
+const saving       = ref(false);
+const uploadError  = ref<string | null>(null);
+const showAIModal  = ref(false);
+const aiPrompt     = ref("");
+const generating   = ref(false);
 
 onMounted(async () => {
-  await store.dispatch('portfolios/fetchData', 'about');
-  if (aboutData.value) {
-    aboutForm.value = { ...aboutData.value };
-  }
+  await portfoliosStore.fetchData("about");
+  if (portfoliosStore.about) aboutForm.value = { ...portfoliosStore.about };
 });
 
-const triggerFileInput = () => {
-  fileInput.value?.click();
-};
+const triggerFileInput = () => fileInput.value?.click();
 
 const handleImageUpload = async (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
+  const file = (event.target as HTMLInputElement).files?.[0];
   if (!file) return;
-
   isUploading.value = true;
   uploadError.value = null;
   try {
-    const downloadURL = await storageService.uploadImage(file, 'about');
-    aboutForm.value.image = downloadURL;
-  } catch (error) {
-    console.error("Upload Error:", error);
+    aboutForm.value.image = await storageService.uploadImage(file, "about");
+  } catch {
     uploadError.value = "Falha no upload da imagem.";
   } finally {
     isUploading.value = false;
   }
 };
 
-const removeImage = () => {
-  aboutForm.value.image = '';
-};
+const removeImage    = () => { aboutForm.value.image = ""; };
 
-const saveAboutData = async () => {
+const saveAboutData  = async () => {
   saving.value = true;
   try {
-    await store.dispatch('portfolios/saveData', { type: 'about', data: aboutForm.value });
-    // Idealmente, ter um toast de sucesso aqui
-    alert('Informações salvas com sucesso!');
-  } catch (error) {
-    console.error('Save Error:', error);
-    alert('Erro ao salvar as informações.');
+    await portfoliosStore.saveData({ type: "about", data: aboutForm.value });
+    alert("Informações salvas com sucesso!");
+  } catch {
+    alert("Erro ao salvar as informações.");
   } finally {
     saving.value = false;
   }
 };
 
-const openAIModal = () => {
-  aiPrompt.value = aboutForm.value.description; // Preenche com a descrição atual
-  showAIModal.value = true;
-};
-
-const closeAIModal = () => {
-  if (!generating.value) {
-    showAIModal.value = false;
-  }
-};
+const openAIModal  = () => { aiPrompt.value = aboutForm.value.description; showAIModal.value = true; };
+const closeAIModal = () => { if (!generating.value) showAIModal.value = false; };
 
 const generateAIDescription = async () => {
-  if (!aiPrompt.value.trim()) {
-    alert('Por favor, forneça alguns pontos chave para a IA.');
-    return;
-  }
+  if (!aiPrompt.value.trim()) { alert("Por favor, forneça alguns pontos chave."); return; }
   generating.value = true;
   try {
-    const prompt = `Com base nestes pontos: "${aiPrompt.value}", gere uma descrição profissional e atrativa para uma página "Sobre Mim" de um portfólio de desenvolvedor. Mantenha um tom ${aiPrompt.value.includes('casual') ? 'casual e amigável' : 'profissional e inspirador'}. O texto deve ter entre 2 e 4 parágrafos.`;
-    const generatedText = await apiGeminiService.generateText(prompt);
-    aboutForm.value.description = generatedText;
+    const prompt = `Com base nestes pontos: "${aiPrompt.value}", gere uma descrição profissional e atrativa para a seção "Sobre Mim" de um portfólio de desenvolvedor. Tom profissional e inspirador. 2 a 4 parágrafos.`;
+    aboutForm.value.description = await apiGeminiService.generateText(prompt);
     closeAIModal();
-  } catch (error) {
-    console.error('AI Generation Error:', error);
-    alert('Erro ao gerar descrição com a IA.');
+  } catch {
+    alert("Erro ao gerar descrição com a IA.");
   } finally {
     generating.value = false;
   }

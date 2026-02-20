@@ -65,62 +65,35 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, inject, nextTick, watch } from 'vue';
-import { useStore } from 'vuex';
-import { useRoute } from 'vue-router';
-import hljs from 'highlight.js';
-// Importe um tema do highlight.js se ainda não tiver feito no main.ts
-import 'highlight.js/styles/atom-one-dark.css'; 
+import { ref, computed, onMounted, inject, nextTick, watch } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
+import { useRoute } from "vue-router";
+import hljs from "highlight.js";
+import "highlight.js/styles/atom-one-dark.css";
 
-const store = useStore();
-const route = useRoute();
-const showToast = inject('showToast') as (toast: { type: string; title: string; message: string; }) => void;
-
-const copiedStepIndex = ref<number | null>(null);
-
-const tutorial = computed(() => store.getters['portfolios/getTutorialBySlug'](route.params.slug as string));
+const portfoliosStore  = usePortfoliosStore();
+const route            = useRoute();
+const showToast        = inject("showToast") as (t: { type: string; title: string; message: string }) => void;
+const copiedStepIndex  = ref<number | null>(null);
+const tutorial         = computed(() => portfoliosStore.getTutorialBySlug(route.params.tutorialSlug as string));
 
 const copyCode = async (code: string, index: number) => {
-    try {
-        await navigator.clipboard.writeText(code);
-        copiedStepIndex.value = index;
-        showToast({
-            type: 'success',
-            title: 'Copiado!',
-            message: 'Código copiado para a área de transferência!'
-        });
-        
-        setTimeout(() => {
-            copiedStepIndex.value = null;
-        }, 2000);
-    } catch (err) {
-        console.error('Erro ao copiar:', err);
-        showToast({
-            type: 'error',
-            title: 'Erro!',
-            message: 'Erro ao copiar o código.'
-        });
-    }
+  try {
+    await navigator.clipboard.writeText(code);
+    copiedStepIndex.value = index;
+    showToast({ type: "success", title: "Copiado!", message: "Código copiado!" });
+    setTimeout(() => { copiedStepIndex.value = null; }, 2000);
+  } catch {
+    showToast({ type: "error", title: "Erro!", message: "Erro ao copiar o código." });
+  }
 };
 
-// Função auxiliar para aplicar o highlight
 const highlightCode = () => {
-    document.querySelectorAll('pre code').forEach((block) => {
-        hljs.highlightElement(block as HTMLElement);
-    });
+  document.querySelectorAll("pre code").forEach((b) => hljs.highlightElement(b as HTMLElement));
 };
 
-onMounted(() => {
-    if (tutorial.value) {
-        highlightCode();
-    }
-});
-
-// Observar mudanças no tutorial para reaplicar highlight se os dados mudarem
-watch(tutorial, async () => {
-    await nextTick();
-    highlightCode();
-});
+onMounted(() => { if (tutorial.value) highlightCode(); });
+watch(tutorial, async () => { await nextTick(); highlightCode(); });
 </script>
 
 <style scoped>

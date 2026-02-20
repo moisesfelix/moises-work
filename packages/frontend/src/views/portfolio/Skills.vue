@@ -25,55 +25,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue';
-import { useStore } from 'vuex';
+import { computed, onMounted, watch, nextTick } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
 
-const store = useStore();
-
-const skills = computed(() => store.state.portfolios.skills);
-const hasSkills = computed(() => {
-  return store.state.portfolios.skills && Object.keys(store.state.portfolios.skills).length > 0;
-});
-
-// Animação da barra de progresso
-const animateBars = () => {
-  if (store.state.portfolios.skills && Object.keys(store.state.portfolios.skills).length > 0) {
-    nextTick(() => {
-      const progressBars = document.querySelectorAll('.progress');
-      progressBars.forEach(bar => {
-        const width = (bar as HTMLElement).getAttribute('data-width');
-        if (width) {
-          (bar as HTMLElement).style.width = width;
-        }
-      });
-    });
-  }
-};
+const portfoliosStore = usePortfoliosStore();
+const skills          = computed(() => portfoliosStore.skills);
 
 const animateSkillBars = () => {
-  const skillBars = document.querySelectorAll('.skill-progress-bar');
-  skillBars.forEach(bar => {
-    const progressBar = bar as HTMLElement;
-    const width = progressBar.style.width;
-    progressBar.style.width = '0%';
-    setTimeout(() => {
-      progressBar.style.width = width;
-    }, 100);
+  document.querySelectorAll<HTMLElement>(".skill-progress-bar").forEach((bar) => {
+    const w  = bar.style.width;
+    bar.style.width = "0%";
+    setTimeout(() => { bar.style.width = w; }, 100);
   });
 };
 
 onMounted(() => {
-    if (store.state.skills && Object.keys(store.state.skills).length > 0) {
-        animateSkillBars();
-    }
+  if (skills.value && Object.keys(skills.value).length > 0) animateSkillBars();
 });
-
-watch(skills, (newSkills) => {
-    if (newSkills && Object.keys(newSkills).length > 0) {
-        animateSkillBars();
-    }
+watch(skills, async (v) => {
+  if (v && Object.keys(v).length > 0) { await nextTick(); animateSkillBars(); }
 }, { deep: true });
-
 </script>
 
 <style scoped>

@@ -82,14 +82,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue';
-import { useStore } from 'vuex';
+import { computed } from "vue";
+import { usePortfoliosStore } from "@/stores/portfolios";
+import { useUiStore }         from "@/stores/ui";
 
-const store = useStore();
-const loading = computed(() => store.state.ui.isLoading);
-const contactInfo = computed(() => store.state.portfolios.contact);
-
-
+const portfoliosStore = usePortfoliosStore();
+const uiStore         = useUiStore();
+const loading         = computed(() => uiStore.isLoading);
+const contactInfo     = computed(() => portfoliosStore.contact);
 </script>
 
 <style scoped>
