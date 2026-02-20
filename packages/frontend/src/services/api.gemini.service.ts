@@ -5,6 +5,7 @@ export interface ArticleGenerationRequest {
   category: string;
   tone?: string;
   length?: 'short' | 'medium' | 'long';
+  persona?: string;
 }
 
 export interface TutorialGenerationRequest {
@@ -12,12 +13,39 @@ export interface TutorialGenerationRequest {
   difficulty: string;
   category: string;
   duration?: string;
+  persona?: string;
+}
+
+export interface RoadmapRequest {
+  goal: string;
+  currentRole?: string;
+  months: number;
+  persona?: string;
+}
+
+export interface ProjectSuggestionRequest {
+  technologies: string[];
+  level: string;
+  persona?: string;
+}
+
+export interface SoftSkillsAnalysisRequest {
+  texts: string[];
+  persona?: string;
+}
+
+export interface SkillsAnalysisRequest {
+  experiences: any[];
+  projects: any[];
+  articles: any[];
+  tutorials: any[];
+  persona?: string;
 }
 
 export interface GeneratedArticle {
   title: string;
   excerpt: string;
-  content: string; // HTML
+  content: string;
   category: string;
   slug: string;
   readTime: string;
@@ -36,12 +64,6 @@ export interface GeneratedTutorial {
   makeImagePrompt: string;
   steps: Array<{ title: string; content: string; code?: string }>;
   tags?: string[];
-}
-
-export interface RoadmapRequest {
-  goal: string;
-  currentRole?: string;
-  months: number;
 }
 
 export interface Roadmap {
@@ -116,8 +138,20 @@ class ApiGeminiService {
     return this.post<GeneratedTutorial>('/v1/gemini/generate-tutorial', request);
   }
 
-  async analyzeSkills(data: { experiences: any[]; projects: any[]; articles: any[]; tutorials: any[] }): Promise<any> {
-    return this.post<any>('/v1/gemini/analyze-skills', data);
+  async generateRoadmap(request: RoadmapRequest): Promise<Roadmap> {
+    return this.post<Roadmap>('/v1/gemini/generate-roadmap', request);
+  }
+
+  async generateProjectSuggestion(technologies: string[], level: string, persona?: string): Promise<ProjectSuggestion> {
+    return this.post<ProjectSuggestion>('/v1/gemini/generate-project-suggestion', { technologies, level, persona });
+  }
+
+  async analyzeSoftSkills(request: SoftSkillsAnalysisRequest): Promise<SoftSkillAnalysis> {
+    return this.post<SoftSkillAnalysis>('/v1/gemini/analyze-soft-skills', request);
+  }
+
+  async analyzeSkills(request: SkillsAnalysisRequest): Promise<any> {
+    return this.post<any>('/v1/gemini/analyze-skills', request);
   }
 
   async generateText(prompt: string): Promise<string> {
@@ -128,19 +162,6 @@ class ApiGeminiService {
   async generateImage(prompt: string): Promise<string> {
     const response = await this.post<{imageBase64: string}>('/v1/gemini/generate-image', { prompt });
     return response.imageBase64;
-  }
-
-  // NOVOS MÉTODOS
-  async generateRoadmap(request: RoadmapRequest): Promise<Roadmap> {
-    return this.post<Roadmap>('/v1/gemini/generate-roadmap', request);
-  }
-
-  async generateProjectSuggestion(technologies: string[], level: string): Promise<ProjectSuggestion> {
-    return this.post<ProjectSuggestion>('/v1/gemini/generate-project-suggestion', { technologies, level });
-  }
-
-  async analyzeSoftSkills(texts: string[]): Promise<SoftSkillAnalysis> {
-    return this.post<SoftSkillAnalysis>('/v1/gemini/analyze-soft-skills', { texts });
   }
 }
 
