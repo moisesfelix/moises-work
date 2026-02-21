@@ -25,6 +25,9 @@ output-*.txt
 analise-*.txt
 upgrade-*.sh
 gerar_*.sh
+feature-*.sh
+*.todo
+docs/*
 
 # Firebase
 .firebase/

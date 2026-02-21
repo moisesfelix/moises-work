@@ -2,6 +2,7 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import appApi from './api/app';
 import appLink from './link/app';
+import paymentApp from './payment';
 
 // Mock service account loading or use Application Default Credentials if file missing
 let serviceAccount: any = {};
@@ -24,4 +25,5 @@ if (!admin.apps.length) {
 
 export const api = functions.https.onRequest(appApi);
 export const link = functions.https.onRequest(appLink);
+export const payment = functions.https.onRequest(paymentApp);
 

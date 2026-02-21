@@ -27,11 +27,17 @@
                 </nav>
                 <ThemeSwitcher />
                 
-                <div v-if="isLoggedIn" class="admin-menu">
-                    <button @click="toggleAdminDropdown" class="avatar-btn">
-                        <img v-if="user?.photoURL" :src="user.photoURL" alt="User Avatar" class="avatar">
-                        <i v-else class="fas fa-user-circle avatar-placeholder"></i>
-                    </button>
+                <div v-if="isLoggedIn" class="user-actions">
+                    <router-link to="/admin/credits" class="credits-badge" title="Meus Créditos">
+                        <span class="credits-icon">💎</span>
+                        <span class="credits-value">{{ userStore.credits }}</span>
+                    </router-link>
+
+                    <div class="admin-menu">
+                        <button @click="toggleAdminDropdown" class="avatar-btn">
+                            <img v-if="user?.photoURL" :src="user.photoURL" alt="User Avatar" class="avatar">
+                            <i v-else class="fas fa-user-circle avatar-placeholder"></i>
+                        </button>
                     <ul v-if="adminDropdownActive" class="admin-dropdown">
                         <li><router-link to="/admin/dashboard" @click="closeAdminDropdown"><i class="fas fa-tachometer-alt"></i> Dashboard</router-link></li>
                         <li><router-link to="/admin/about" @click="closeAdminDropdown"><i class="fas fa-user"></i> Sobre</router-link></li>
@@ -42,8 +48,10 @@
                         <li><router-link to="/admin/skills" @click="closeAdminDropdown"><i class="fas fa-cogs"></i> Habilidades</router-link></li>
                         <li><router-link to="/admin/contact" @click="closeAdminDropdown"><i class="fas fa-envelope"></i> Contato</router-link></li>
                         <li><router-link to="/admin/roadmap" @click="closeAdminDropdown"><i class="fas fa-rocket"></i> Trajetória</router-link></li> <!-- NOVO -->
+                        <li><router-link to="/admin/credits" @click="closeAdminDropdown"><i class="fas fa-coins"></i> Créditos</router-link></li>
                         <li><a @click="logout"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
                     </ul>
+                </div>
                 </div>
                 <div v-else class="login-menu">
                     <router-link to="/login" class="btn btn-outline"><i class="fab fa-google"></i> Entrar</router-link>
@@ -63,6 +71,7 @@ import type { User } from "firebase/auth";
 import ThemeSwitcher from "./ThemeSwitcher.vue";
 import { useRouter, useRoute } from "vue-router";
 import { usePortfoliosStore } from "@/stores/portfolios";
+import { useUserStore } from "@/stores/user";
 
 const mobileMenuActive    = ref(false);
 const adminDropdownActive = ref(false);
@@ -72,6 +81,7 @@ const auth                = getAuth();
 const router              = useRouter();
 const route               = useRoute();
 const portfoliosStore     = usePortfoliosStore();
+const userStore           = useUserStore();
 
 const slug           = computed(() => route.params.slug as string);
 const portfolioTitle = computed(() => portfoliosStore.about?.title || "Meu Portfólio");
@@ -211,6 +221,32 @@ nav ul li a {
 @media (max-width: 992px) {
     /* Styles are now unified for all sizes as per request */
 }
+.user-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.credits-badge {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(91, 95, 171, 0.1);
+    color: #5b5fab;
+    padding: 5px 12px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: 0.2s;
+    border: 1px solid rgba(91, 95, 171, 0.2);
+}
+
+.credits-badge:hover {
+    background: rgba(91, 95, 171, 0.2);
+    transform: translateY(-1px);
+}
+
 .admin-menu {
     position: relative;
 }

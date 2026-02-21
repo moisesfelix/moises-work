@@ -243,15 +243,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, inject } from 'vue';
 import { usePortfoliosStore } from '@/stores/portfolios';
 import { apiGeminiService } from '@/services/api.gemini.service';
 import { useRouter } from 'vue-router';
 import { useUiStore } from '@/stores/ui';
+import { useUserStore } from '@/stores/user';
+import { useAuthStore } from '@/stores/auth';
+import { AppSDK } from '@/sdk/AppSDK';
 
+const sdk = inject('sdk') as AppSDK;
 const portfoliosStore = usePortfoliosStore();
 const uiStore = useUiStore();
 const router = useRouter();
+const userStore = useUserStore();
+const authStore = useAuthStore();
 
 const roadmap = computed(() => portfoliosStore.currentRoadmap);
 const softSkills = computed(() => portfoliosStore.softSkills);
@@ -328,6 +334,18 @@ const openQuiz = async (step: any) => {
   // Garante que tags seja um array, mesmo para roadmaps antigos
   if (!step.tags) step.tags = [];
   
+  const { canExecute, cost, type } = sdk.credits.canUse({
+    credits: userStore.credits,
+    dailyCredits: userStore.dailyCredits,
+    isDailyPlanActive: userStore.dailyPlanExpiry && new Date(userStore.dailyPlanExpiry) > new Date()
+  }, 'generate_quiz');
+
+  if (!canExecute) {
+    uiStore.triggerToast({ message: 'Créditos insuficientes para gerar o quiz.', type: 'warning' });
+    router.push('/admin/credits');
+    return;
+  }
+
   currentQuizStep.value = step;
   showQuizModal.value = true;
   loadingQuiz.value = true;
@@ -339,6 +357,10 @@ const openQuiz = async (step: any) => {
     const userPersona = localStorage.getItem('userPersona') || 'Professor Especialista';
     // Chama o serviço para gerar o quiz
     const questions = await apiGeminiService.generateStepQuiz(step.title, 'Intermediário', userPersona);
+    
+    // Deduz créditos apenas se gerar com sucesso
+    await sdk.credits.deduct(authStore.user?.uid!, cost, type);
+
     quizQuestions.value = questions;
   } catch (e: any) {
     uiStore.triggerToast({ message: 'Erro ao gerar quiz: ' + e.message, type: 'error' });
@@ -401,16 +423,32 @@ const retryQuiz = () => {
 };
 
 const generateRoadmap = async () => {
+  const { canExecute, cost, type } = sdk.credits.canUse({
+    credits: userStore.credits,
+    dailyCredits: userStore.dailyCredits,
+    isDailyPlanActive: userStore.dailyPlanExpiry && new Date(userStore.dailyPlanExpiry) > new Date()
+  }, 'generate_roadmap');
+
+  if (!canExecute) {
+    uiStore.triggerToast({ message: 'Créditos insuficientes. Adquira mais para continuar.', type: 'warning' });
+    router.push('/admin/credits');
+    return;
+  }
+
   generating.value = true;
   try {
     const result = await apiGeminiService.generateRoadmap({
       ...goalForm.value,
-      skills: portfoliosStore.userSkills // Envia as skills do usuário para o backend
+      skills: portfoliosStore.userSkills 
     });
-    // Adiciona campo completed a cada step
+    
+    // Deduz créditos após sucesso
+    await sdk.credits.deduct(authStore.user?.uid!, cost, type);
+    
     result.steps = result.steps.map(s => ({ ...s, completed: false }));
     await portfoliosStore.saveRoadmap(result);
     isCreatingNew.value = false;
+    uiStore.triggerToast({ message: 'Roadmap gerado! Créditos utilizados: ' + cost, type: 'success' });
   } catch (e: any) {
     uiStore.triggerToast({ message: 'Erro ao gerar roadmap: ' + e.message, type: 'error' });
   } finally {
@@ -440,6 +478,18 @@ const generateArticleForStep = async (step: any) => {
     return;
   }
   
+  const { canExecute, cost, type } = sdk.credits.canUse({
+    credits: userStore.credits,
+    dailyCredits: userStore.dailyCredits,
+    isDailyPlanActive: userStore.dailyPlanExpiry && new Date(userStore.dailyPlanExpiry) > new Date()
+  }, 'generate_article');
+
+  if (!canExecute) {
+    uiStore.triggerToast({ message: 'Créditos insuficientes.', type: 'warning' });
+    router.push('/admin/credits');
+    return;
+  }
+  
   generating.value = true;
   try {
     // Garante que a lista de artigos está carregada para não sobrescrever com array vazio se não tiver carregado
@@ -464,6 +514,8 @@ const generateArticleForStep = async (step: any) => {
       persona: userPersona
     });
     
+    await sdk.credits.deduct(authStore.user?.uid!, cost, type);
+
     // Salvar artigo
     const newArticle = { 
       ...article, 
@@ -497,6 +549,18 @@ const generateTutorialForStep = async (step: any) => {
     router.push(`/admin/tutorials/edit/${step.generatedTutorialId}`);
     return;
   }
+
+  const { canExecute, cost, type } = sdk.credits.canUse({
+    credits: userStore.credits,
+    dailyCredits: userStore.dailyCredits,
+    isDailyPlanActive: userStore.dailyPlanExpiry && new Date(userStore.dailyPlanExpiry) > new Date()
+  }, 'generate_tutorial');
+
+  if (!canExecute) {
+    uiStore.triggerToast({ message: 'Créditos insuficientes.', type: 'warning' });
+    router.push('/admin/credits');
+    return;
+  }
   
   generating.value = true;
   try {
@@ -518,6 +582,8 @@ const generateTutorialForStep = async (step: any) => {
       persona: userPersona
     });
     
+    await sdk.credits.deduct(authStore.user?.uid!, cost, type);
+
     const newTutorial = { 
       ...tutorial, 
       id: Date.now().toString(), 
@@ -545,6 +611,18 @@ const generateProjectForStep = async (step: any) => {
     router.push(`/admin/projects/edit/${step.generatedProjectId}`);
     return;
   }
+
+  const { canExecute, cost, type } = sdk.credits.canUse({
+    credits: userStore.credits,
+    dailyCredits: userStore.dailyCredits,
+    isDailyPlanActive: userStore.dailyPlanExpiry && new Date(userStore.dailyPlanExpiry) > new Date()
+  }, 'generate_project');
+
+  if (!canExecute) {
+    uiStore.triggerToast({ message: 'Créditos insuficientes.', type: 'warning' });
+    router.push('/admin/credits');
+    return;
+  }
   
   generating.value = true;
   try {
@@ -560,6 +638,8 @@ const generateProjectForStep = async (step: any) => {
     // Sugestão de projeto
     const suggestion = await apiGeminiService.generateProjectSuggestion(techContext, 'iniciante', userPersona);
     
+    await sdk.credits.deduct(authStore.user?.uid!, cost, type);
+
     const project = {
       id: Date.now().toString(),
       title: suggestion.title,
@@ -586,6 +666,18 @@ const generateProjectForStep = async (step: any) => {
 };
 
 const analyzeSoftSkills = async () => {
+  const { canExecute } = sdk.credits.canUse({
+    credits: userStore.credits,
+    dailyCredits: userStore.dailyCredits,
+    isDailyPlanActive: userStore.dailyPlanExpiry && new Date(userStore.dailyPlanExpiry) > new Date()
+  }, 'analyze_soft_skills');
+
+  if (!canExecute) {
+    uiStore.triggerToast({ message: 'Créditos insuficientes.', type: 'warning' });
+    router.push('/admin/credits');
+    return;
+  }
+
   analyzingSoft.value = true;
   try {
     // Garante que temos os dados carregados antes de analisar
@@ -627,6 +719,17 @@ const analyzeSoftSkills = async () => {
        persona: userPersona
     });
     
+    // Deduz créditos apenas se gerar com sucesso
+    // Nota: Como não estamos passando userId para o SDK diretamente na chamada da API, 
+    // precisamos deduzir manualmente aqui. O ideal seria o backend fazer isso.
+    const { cost, type } = sdk.credits.canUse({
+      credits: userStore.credits,
+      dailyCredits: userStore.dailyCredits,
+      isDailyPlanActive: userStore.dailyPlanExpiry && new Date(userStore.dailyPlanExpiry) > new Date()
+    }, 'analyze_soft_skills');
+    
+    await sdk.credits.deduct(authStore.user?.uid!, cost, type);
+
     await portfoliosStore.saveSoftSkills(analysis);
     uiStore.triggerToast({ message: 'Soft skills analisadas com sucesso!', type: 'success' });
   } catch (e: any) {

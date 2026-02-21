@@ -27,7 +27,8 @@ import AdminExperiences from '@/views/admin/experiences/Experiences.vue';
 import AdminSkills from '@/views/admin/skills/Skills.vue';
 import AdminAbout from '@/views/admin/about/About.vue';
 import AdminContact from '@/views/admin/contact/Contact.vue';
-import AdminRoadmap from '@/views/admin/roadmap/Roadmap.vue'; // NOVA
+import AdminRoadmap from '@/views/admin/roadmap/Roadmap.vue';
+import AdminCredits from '@/views/admin/credits/Credits.vue'; // NOVA
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -112,6 +113,12 @@ const routes: Array<RouteRecordRaw> = [
         name: 'AdminRoadmap',
         component: AdminRoadmap,
         meta: { title: 'Trajetória' }
+      },
+      {
+        path: 'credits',
+        name: 'AdminCredits',
+        component: AdminCredits,
+        meta: { title: 'Créditos & Planos' }
       }
     ]
   },
