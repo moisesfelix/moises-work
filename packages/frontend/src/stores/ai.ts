@@ -68,10 +68,24 @@ export const useAiStore = defineStore('ai', {
       ui.setError(null);
       try {
         const generated = await apiGeminiService.generateTutorial(request);
-        let imageUrl = '';
-        if (generated.makeImagePrompt) {
-          const urls = await storageService.uploadMultipleImages([generated.makeImagePrompt], 'tutorials');
-          imageUrl = urls[0];
+        let imageUrl = 'https://via.placeholder.com/600x400';
+        try {
+           if (generated.makeImagePrompt && generated.makeImagePrompt.startsWith('http')) {
+              imageUrl = generated.makeImagePrompt;
+           } else if (generated.makeImagePrompt) {
+              // Tenta gerar a imagem real usando o prompt
+              try {
+                  const urls = await storageService.uploadMultipleImages([generated.makeImagePrompt], 'tutorials');
+                  if (urls.length > 0) {
+                      imageUrl = urls[0];
+                  }
+              } catch (imgError) {
+                  console.error('Falha ao gerar imagem real, usando placeholder:', imgError);
+                  imageUrl = `https://via.placeholder.com/800x400?text=${encodeURIComponent(generated.title)}`;
+              }
+           }
+        } catch (e) {
+            console.error('Image logic failed:', e);
         }
 
         const tutorial = {

@@ -286,9 +286,27 @@ class ApiGeminiService {
     return response.text;
   }
 
-  async generateImage(prompt: string): Promise<string> {
+  async generateImage(prompt: string): Promise<Blob> {
     const response = await this.post<{imageBase64: string}>('/v1/gemini/generate-image', { prompt });
-    return response.imageBase64;
+    
+    try {
+        // Se a API retornar "data:image/jpeg;base64,...", removemos o prefixo
+        const base64Data = response.imageBase64.replace(/^data:image\/\w+;base64,/, "");
+        
+        // Decodifica a string Base64 para um array de bytes
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        
+        // Retorna um Blob pronto para upload
+        return new Blob([byteArray], { type: 'image/jpeg' });
+    } catch (e) {
+        console.error("Erro ao converter imagem Base64 para Blob:", e);
+        throw new Error("Falha ao processar imagem gerada.");
+    }
   }
 }
 
