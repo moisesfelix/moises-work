@@ -8,7 +8,7 @@
           <span class="stat-label">Projetos Portifólio</span>
         </div>
         <div class="stat-item">
-          <span class="stat-number">{{ skillsCategoriesCount }}+</span>
+          <span class="stat-number">{{ skillsTotalCount }}+</span>
           <span class="stat-label">Habilidades Técnicas</span>
         </div>
         <div class="stat-item">
@@ -30,7 +30,25 @@ import { usePortfoliosStore } from "@/stores/portfolios";
 
 const portfoliosStore     = usePortfoliosStore();
 const projectsCount       = computed(() => portfoliosStore.projects?.length || 0);
-const skillsCount         = computed(() => portfoliosStore.skills ? Object.keys(portfoliosStore.skills).length : 0);
+
+// Conta o total de skills somando os arrays de cada categoria
+const skillsTotalCount    = computed(() => {
+  // Se usar a estrutura 'userSkills' (nova, array simples de tags), priorize
+  if (Array.isArray(portfoliosStore.userSkills) && portfoliosStore.userSkills.length > 0) {
+      return portfoliosStore.userSkills.length;
+  }
+  
+  if (!portfoliosStore.skills) return 0;
+  
+  // Se a estrutura 'skills' for array simples (legado)
+  if (Array.isArray(portfoliosStore.skills)) return portfoliosStore.skills.length;
+  
+  // Se for objeto de categorias { Frontend: [...], Backend: [...] }
+  return Object.values(portfoliosStore.skills).reduce((acc: number, categorySkills: any) => {
+    return acc + (Array.isArray(categorySkills) ? categorySkills.length : 0);
+  }, 0);
+});
+
 const experienceCount     = computed(() => portfoliosStore.experiences?.length || 0);
 const contentCount        = computed(() => (portfoliosStore.articles?.length || 0) + (portfoliosStore.tutorials?.length || 0));
 </script>
