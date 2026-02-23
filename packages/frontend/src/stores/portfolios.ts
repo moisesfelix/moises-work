@@ -140,39 +140,48 @@ export const usePortfoliosStore = defineStore('portfolios', {
 
         let portfolioId: string | null = null;
         let isNew = false;
+        let uniqueSlug = '';
 
         if (snap.exists()) {
           portfolioId = Object.keys(snap.val())[0];
+          // Recupera o slug se já existir
+          const metaSnap = await get(ref(db, `portfolios_meta/${portfolioId}`));
+          if (metaSnap.exists()) {
+              uniqueSlug = metaSnap.val().slug;
+          }
         } else {
+          // Criação inicial
           isNew       = true;
           portfolioId = push(ref(db, 'portfolios_meta')).key!;
-          const title     = auth.user.displayName || 'Meu Portfólio';
+          const title     = auth.user?.displayName || 'Meu Portfólio';
           const slugBase  = kebabCase(title);
-          const uniqueSlug = `${slugBase}-${portfolioId.substring(portfolioId.length - 4)}`;
+          uniqueSlug = `${slugBase}-${portfolioId.substring(portfolioId.length - 4)}`;
 
           const updates: Record<string, any> = {};
           updates[`/portfolios_meta/${portfolioId}`]    = { title, slug: uniqueSlug, ownerUid: uid, thumbnail: '', createdAt: serverTimestamp() };
-          updates[`/portfolios_content/${portfolioId}`] = { about: { title: `Olá, sou ${title}`, description: 'Portfólio gerado automaticamente.' }, contact: { email: auth.user.email }, projects: [], articles: [], skills: {}, experiences: [], roadmap: null, softSkills: null };
+          updates[`/portfolios_content/${portfolioId}`] = { about: { title: `Olá, sou ${title}`, description: 'Portfólio gerado automaticamente.' }, contact: { email: auth.user?.email }, projects: [], articles: [], skills: {}, experiences: [], roadmap: null, softSkills: null };
           updates[`/users/${uid}/portfolios/${portfolioId}`] = true;
           updates[`/slugs/${uniqueSlug}`] = portfolioId;
+          
           await update(ref(db), updates);
-
-          this.activePortfolioSlug = uniqueSlug;
         }
 
         this.activePortfolioId = portfolioId;
-        const contentSnap = await get(ref(db, `portfolios_content/${portfolioId}`));
-        if (contentSnap.exists()) this.setPortfolioData(contentSnap.val());
-
-        if (!isNew && portfolioId) {
-          const metaSnap = await get(ref(db, `portfolios_meta/${portfolioId}`));
-          if (metaSnap.exists()) {
-            this.activePortfolioSlug = metaSnap.val().slug;
-          }
+        this.activePortfolioSlug = uniqueSlug;
+        
+        // Armazena o slug do usuário no localStorage para acesso rápido no Header
+        if (uniqueSlug) {
+            localStorage.setItem('userSlug', uniqueSlug);
         }
 
-        return { isNew, portfolioId };
+        const contentSnap = await get(ref(db, `portfolios_content/${portfolioId}`));
+        if (contentSnap.exists()) {
+             this.setPortfolioData(contentSnap.val());
+        }
+
+        return { isNew, portfolioId, slug: uniqueSlug };
       } catch (error: any) {
+        console.error('Initialize Error:', error);
         useUiStore().setError('Falha crítica ao inicializar portfólio: ' + error.message);
       } finally {
         ui.setLoading(false);

@@ -40,6 +40,9 @@
                         </button>
                     <ul v-if="adminDropdownActive" class="admin-dropdown">
                         <li><router-link to="/admin/dashboard" @click="closeAdminDropdown"><i class="fas fa-tachometer-alt"></i> Dashboard</router-link></li>
+                        <!-- Link direto para o portfólio público do usuário -->
+                        <li v-if="userSlug"><router-link :to="`/${userSlug}`" @click="closeAdminDropdown" target="_blank"><i class="fas fa-external-link-alt"></i> Meu Portfólio</router-link></li>
+                        
                         <li><router-link to="/admin/about" @click="closeAdminDropdown"><i class="fas fa-user"></i> Sobre</router-link></li>
                         <li><router-link to="/admin/projects" @click="closeAdminDropdown"><i class="fas fa-project-diagram"></i> Projetos</router-link></li>
                         <li><router-link to="/admin/articles" @click="closeAdminDropdown"><i class="fas fa-newspaper"></i> Artigos</router-link></li>
@@ -84,6 +87,10 @@ const portfoliosStore     = usePortfoliosStore();
 const userStore           = useUserStore();
 
 const slug           = computed(() => route.params.slug as string);
+// Tenta obter o slug do usuário logado (pode estar na store ou no localStorage)
+// Assumindo que o userStore ou portfoliosStore tenha essa info, senão pegamos de portfoliosStore.about?.slug se for o dono
+const userSlug       = computed(() => portfoliosStore.about?.slug || localStorage.getItem('userSlug')); 
+
 const portfolioTitle = computed(() => portfoliosStore.about?.title || "Meu Portfólio");
 const mobileMenuIcon = computed(() => (mobileMenuActive.value ? "fas fa-times" : "fas fa-bars"));
 
