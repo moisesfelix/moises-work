@@ -27,10 +27,17 @@ export const useAiStore = defineStore('ai', {
             // Tenta usar a imagem gerada se for uma URL válida, senão usa placeholder
             if (generated.makeImagePrompt && generated.makeImagePrompt.startsWith('http')) {
                 imageUrl = generated.makeImagePrompt;
-            } else {
-                 // Aqui poderia chamar apiGeminiService.generateImage(generated.makeImagePrompt)
-                 // mas por simplicidade e robustez imediata, usamos placeholder temático
-                 imageUrl = `https://via.placeholder.com/800x400?text=${encodeURIComponent(generated.title)}`;
+            } else if (generated.makeImagePrompt) {
+                 // Tenta gerar a imagem real usando o prompt
+                 try {
+                    const urls = await storageService.uploadMultipleImages([generated.makeImagePrompt], 'articles');
+                    if (urls.length > 0) {
+                        imageUrl = urls[0];
+                    }
+                 } catch (imgError) {
+                    console.error('Falha ao gerar imagem real, usando placeholder:', imgError);
+                    imageUrl = `https://via.placeholder.com/800x400?text=${encodeURIComponent(generated.title)}`;
+                 }
             }
         } catch (e) { 
             console.error('Image logic failed:', e); 
