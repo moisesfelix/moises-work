@@ -45,6 +45,14 @@ export interface SkillsAnalysisRequest {
   persona?: string;
 }
 
+export interface GithubAnalysisRequest {
+  readme: string;
+  commits: any[];
+  languages: any;
+  description: string;
+  repoName: string;
+}
+
 export interface GeneratedArticle {
   title: string;
   excerpt: string;
@@ -331,6 +339,49 @@ Return ONLY valid JSON with this structure (no markdown):
     return JSON.parse(text);
   }
 
+  // NOVO: analyzeGithubProject
+  async analyzeGithubProject(request: GithubAnalysisRequest): Promise<any> {
+    const model = this.getModel();
+    
+    // Resume README e commits para não estourar tokens
+    const readmeSnippet = request.readme.substring(0, 8000);
+    const commitsSnippet = JSON.stringify(request.commits.slice(0, 15).map(c => c.message));
+    
+    const prompt = `
+You are a Senior Tech Lead and Project Manager.
+Analyze the following GitHub repository data to extract structured project information for a portfolio.
+
+REPO NAME: ${request.repoName}
+DESCRIPTION: ${request.description}
+LANGUAGES: ${JSON.stringify(request.languages)}
+COMMITS: ${commitsSnippet}
+README: 
+"""
+${readmeSnippet}
+"""
+
+TASK:
+1. Create a catchy, professional Title.
+2. Write a compelling Description (2-3 paragraphs) highlighting features, tech stack, and purpose.
+3. Determine the Category (Web, Mobile, AI, Backend, Tool, etc.).
+4. Generate relevant Tags (tech stack + concepts).
+5. Create a prompt for an AI image generator to create a cover image for this project.
+
+Return ONLY valid JSON:
+{
+  "title": "Project Title",
+  "description": "Professional description...",
+  "category": "Web",
+  "tags": ["React", "Firebase", "SAAS"],
+  "imagePrompt": "A futuristic dashboard displaying..."
+}
+    `;
+
+    const result = await model.generateContent(prompt);
+    let text = result.response.text().replace(/```json|```/g, '').trim();
+    return JSON.parse(text);
+  }
+
   async generateText(prompt: string): Promise<string> {
     const model = this.getModel();
     const result = await model.generateContent(prompt);
@@ -338,7 +389,7 @@ Return ONLY valid JSON with this structure (no markdown):
   }
 
   async generateImage(prompt: string): Promise<string> {
-    const MODEL = "models/imagen-3.0-generate-002";
+    const MODEL = "models/imagen-4.0-generate-001";
     const API_KEY = geminiApiKey.value();
     const URL = `https://generativelanguage.googleapis.com/v1beta/${MODEL}:predict?key=${API_KEY}`;
 

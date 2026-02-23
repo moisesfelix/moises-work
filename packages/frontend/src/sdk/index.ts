@@ -4,7 +4,7 @@ import { AppSDK } from './AppSDK'
 // Defina a URL base para as Cloud Functions/APIs
 // Se estiver usando o emulador local, ajuste para localhost
 // Se estiver em produção, use a URL do seu projeto Firebase
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api-4r3pfwtxnq-uc.a.run.app/v1'
+const API_BASE_URL = 'https://api-4r3pfwtxnq-uc.a.run.app/v1'
 
 export const sdk = new AppSDK({
   db,
@@ -31,8 +31,10 @@ export const sdk = new AppSDK({
     generate_tutorial: `${API_BASE_URL}/gemini/generate-tutorial`,
     generate_roadmap: `${API_BASE_URL}/gemini/generate-roadmap`,
     generate_text: `${API_BASE_URL}/gemini/generate-text`,
+    generate_image: `${API_BASE_URL}/gemini/generate-image`, // Adicionado
     analyze_soft_skills: `${API_BASE_URL}/gemini/analyze-soft-skills`,
     analyze_skills: `${API_BASE_URL}/gemini/analyze-skills`,
+    analyze_github_project: `${API_BASE_URL}/gemini/analyze-github-project`, // Adicionado
   },
   
   // Configuração do módulo PIX
