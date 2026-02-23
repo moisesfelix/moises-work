@@ -170,13 +170,16 @@ class CreditsModule {
     const cost = this.getCost(featureName)
     if (cost === 0) return { canExecute: true, cost: 0, type: 'free' }
     
-    if (userState.isDailyPlanActive) {
+    // 1. Tenta usar créditos do plano diário se estiver ativo E tiver saldo suficiente
+    if (userState.isDailyPlanActive && (userState.dailyCredits || 0) >= cost) {
       return {
-        canExecute: (userState.dailyCredits || 0) >= cost,
+        canExecute: true,
         cost,
         type: 'daily'
       }
     }
+
+    // 2. Se não tiver plano diário OU saldo diário insuficiente, usa créditos regulares
     return {
       canExecute: (userState.credits || 0) >= cost,
       cost,
@@ -706,6 +709,8 @@ class ReferralModule {
   }
 }
 
+import { authService } from '@/services/auth.service';
+
 // ============================================================
 // 4. GENERATION MODULE — Chamadas a APIs de geração de conteúdo
 // ============================================================
@@ -719,9 +724,16 @@ class GenerationModule {
   async call(endpointName: string, payload: any) {
     const url = this.endpoints[endpointName]
     if (!url) throw new Error(`[GenerationModule] Endpoint '${endpointName}' não registrado.`)
+    
+    // Obtém o header de autenticação
+    const authHeader = await authService.getAuthHeader();
+
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        ...authHeader 
+      },
       body: JSON.stringify(payload)
     })
     if (!response.ok) {

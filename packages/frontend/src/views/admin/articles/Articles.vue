@@ -199,6 +199,7 @@
                 <li>Geração de imagem de capa</li>
                 <li>Formatação HTML automática</li>
               </ul>
+              <div class="cost-badge">Custo: 2 Créditos</div>
             </div>
 
             <div class="modal-footer">
@@ -217,16 +218,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, inject } from "vue";
 import { usePortfoliosStore } from "@/stores/portfolios";
 import { useUiStore }         from "@/stores/ui";
 import { useAiStore }         from "@/stores/ai";
+import { useUserStore }       from "@/stores/user";
 import { storageService }     from "@/services/storage.service";
 import { v4 as uuidv4 }       from "uuid";
+import { AppSDK } from "@/sdk/AppSDK";
 
+const sdk = inject('sdk') as AppSDK;
 const portfoliosStore    = usePortfoliosStore();
 const uiStore            = useUiStore();
 const aiStore            = useAiStore();
+const userStore          = useUserStore();
 const articles           = computed(() => portfoliosStore.articles || []);
 const loading            = computed(() => uiStore.isLoading);
 const showAIModal        = ref(false);
@@ -265,13 +270,57 @@ const openAIModal  = () => { aiForm.value = { topic: "", category: "", length: "
 const closeAIModal = () => { if (!generating.value) showAIModal.value = false; };
 
 const generateArticle = async () => {
-  generating.value = true;
-  try {
-    generatingStatus.value = "Gerando texto...";
-    await aiStore.generateArticleWithAI(aiForm.value);
-    closeAIModal();
-  } catch (e: any) { alert("Erro: " + e.message); }
-  finally { generating.value = false; }
+  const cost = sdk.credits.getCost('generate_article');
+  
+  // Use userStore.credits e dailyCredits diretamente se estiverem disponíveis
+  const userState = { 
+        credits: userStore.credits, 
+        dailyCredits: userStore.dailyCredits, 
+        isDailyPlanActive: userStore.isDailyPlanActive || false
+  };
+
+  const canUse = sdk.credits.canUse(userState, 'generate_article');
+
+  if (!canUse.canExecute) {
+      alert("Créditos insuficientes. Verifique seus créditos diários ou regulares.");
+      return;
+  }
+
+    generating.value = true;
+    try {
+        generatingStatus.value = "Gerando texto...";
+        
+        // Removemos a dedução manual via SDK no frontend.
+        // A API backend agora é responsável por verificar e debitar os créditos atomicamente.
+        /*
+        const auth = await import('firebase/auth').then(m => m.getAuth());
+        if (auth.currentUser) {
+            await sdk.credits.deduct(auth.currentUser.uid, cost, canUse.type);
+        } else {
+             throw new Error("Usuário não autenticado.");
+        }
+        */
+
+        try {
+             // Chama a API real
+            await aiStore.generateArticleWithAI(aiForm.value);
+            closeAIModal();
+        } catch (apiError: any) {
+            console.error("Erro na API:", apiError);
+            // Não precisa estornar manualmente, a API só debita se tiver sucesso
+            /*
+            if (auth.currentUser) {
+                await sdk.credits.add(auth.currentUser.uid, cost, canUse.type);
+            }
+            */
+            throw new Error(apiError.message || "Erro desconhecido na geração");
+        }
+
+    } catch (e: any) { 
+        alert("Erro: " + e.message); 
+    } finally { 
+        generating.value = false; 
+    }
 };
 
 const openAddArticleDialog  = () => { editingArticle.value = null; resetForm(); showArticleDialog.value = true; };
