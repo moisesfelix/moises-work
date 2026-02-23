@@ -359,7 +359,8 @@ const openQuiz = async (step: any) => {
     const questions = await apiGeminiService.generateStepQuiz(step.title, 'Intermediário', userPersona);
     
     // Deduz créditos apenas se gerar com sucesso
-    await sdk.credits.deduct(authStore.user?.uid!, cost, type);
+    // REMOVIDO: await sdk.credits.deduct(authStore.user?.uid!, cost, type);
+    // A API backend agora deduz os créditos automaticamente.
 
     quizQuestions.value = questions;
   } catch (e: any) {
@@ -443,7 +444,7 @@ const generateRoadmap = async () => {
     });
     
     // Deduz créditos após sucesso
-    await sdk.credits.deduct(authStore.user?.uid!, cost, type);
+    // REMOVIDO: await sdk.credits.deduct(authStore.user?.uid!, cost, type);
     
     result.steps = result.steps.map(s => ({ ...s, completed: false }));
     await portfoliosStore.saveRoadmap(result);
@@ -514,7 +515,7 @@ const generateArticleForStep = async (step: any) => {
       persona: userPersona
     });
     
-    await sdk.credits.deduct(authStore.user?.uid!, cost, type);
+    // REMOVIDO: await sdk.credits.deduct(authStore.user?.uid!, cost, type);
 
     // Salvar artigo
     const newArticle = { 
@@ -582,7 +583,7 @@ const generateTutorialForStep = async (step: any) => {
       persona: userPersona
     });
     
-    await sdk.credits.deduct(authStore.user?.uid!, cost, type);
+    // REMOVIDO: await sdk.credits.deduct(authStore.user?.uid!, cost, type);
 
     const newTutorial = { 
       ...tutorial, 
@@ -638,7 +639,7 @@ const generateProjectForStep = async (step: any) => {
     // Sugestão de projeto
     const suggestion = await apiGeminiService.generateProjectSuggestion(techContext, 'iniciante', userPersona);
     
-    await sdk.credits.deduct(authStore.user?.uid!, cost, type);
+    // REMOVIDO: await sdk.credits.deduct(authStore.user?.uid!, cost, type);
 
     const project = {
       id: Date.now().toString(),
@@ -728,7 +729,8 @@ const analyzeSoftSkills = async () => {
       isDailyPlanActive: userStore.dailyPlanExpiry && new Date(userStore.dailyPlanExpiry) > new Date()
     }, 'analyze_soft_skills');
     
-    await sdk.credits.deduct(authStore.user?.uid!, cost, type);
+    // REMOVIDO: await sdk.credits.deduct(authStore.user?.uid!, cost, type);
+    // A API analyzeSoftSkills deve ser atualizada para deduzir no backend.
 
     await portfoliosStore.saveSoftSkills(analysis);
     uiStore.triggerToast({ message: 'Soft skills analisadas com sucesso!', type: 'success' });
