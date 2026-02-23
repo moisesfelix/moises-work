@@ -117,6 +117,12 @@ const routes: Array<RouteRecordRaw> = [
       },
       {
         path: 'credits',
+      {
+        path: 'nexus-sprint',
+        name: 'AdminNexusSprint',
+        component: () => import(@/views/admin/nexus-sprint/NexusSprint.vue),
+        meta: { title: 'Nexus Sprint' }
+      },
         name: 'AdminCredits',
         component: AdminCredits,
         meta: { title: 'Créditos & Planos' }

@@ -52,6 +52,7 @@
                         <li><router-link to="/admin/contact" @click="closeAdminDropdown"><i class="fas fa-envelope"></i> Contato</router-link></li>
                         <li><router-link to="/admin/roadmap" @click="closeAdminDropdown"><i class="fas fa-rocket"></i> Trajetória</router-link></li> <!-- NOVO -->
                         <li><router-link to="/admin/credits" @click="closeAdminDropdown"><i class="fas fa-coins"></i> Créditos</router-link></li>
+                        <li><router-link to="/admin/nexus-sprint" @click="closeAdminDropdown"><i class="fas fa-bolt"></i> Nexus Sprint</router-link></li>
                         <li><a @click="logout"><i class="fas fa-sign-out-alt"></i> Sair</a></li>
                     </ul>
                 </div>
