@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { getDatabase, ref as dbRef, onValue, off, get } from 'firebase/database';
-import { getAuth } from 'firebase/auth';
+
+import { getDatabase, ref as dbRef, onValue, off, get, set, update, child } from 'firebase/database';
+import { getAuth, signOut } from 'firebase/auth';
 import { sdk } from '@/sdk';
 import { useUiStore } from '@/stores/ui';
+import { useRouter } from 'vue-router';
 
 interface ReferralData {
   link: string;
@@ -28,15 +30,39 @@ interface SpendingHistoryItem {
 export const useUserStore = defineStore('user', () => {
   const credits = ref(0);
   const dailyCredits = ref(0);
+  const isDailyPlanActive = ref(false); // Adicionado para uso na UI
   const dailyPlanExpiry = ref<string | null>(null);
   const lastBonusDate = ref<string | null>(null);
   const referralData = ref<ReferralData | null>(null);
   const referralHistory = ref<ReferralHistoryItem[]>([]);
   const spendingHistory = ref<SpendingHistoryItem[]>([]);
   
-  let userRef: any = null;
-  let historyRef: any = null;
-  let spendingRef: any = null;
+
+
+
+  let userRefUnsub: any = null;
+  let historyRefUnsub: any = null;
+  let spendingRefUnsub: any = null;
+  const router = useRouter(); // Use fora do checkAuthError para garantir contexto
+  const uiStore = useUiStore();
+
+
+
+
+
+
+
+
+
+  const checkAuthError = async (message:string) => {
+      // Simplificado check de erro
+      if (message && (message.includes('auth/id-token-expired') || message.includes('Unauthorized'))) {
+          const auth = getAuth();
+          await signOut(auth);
+          router.push({ name: 'Login' });
+      }
+
+  };
 
   const checkMonthlyBonus = async () => {
     const auth = getAuth();
@@ -44,29 +70,37 @@ export const useUserStore = defineStore('user', () => {
     if (!user) return;
 
     try {
-      // Use SDK agnostic method to retrieve data
+
       const lastBonus = await sdk.credits.getLastBonusDate(user.uid);
 
       const now = new Date();
-      const bonusAmount = 50;
+
+      // Bônus mensal se tiver passado 30 dias ou se nunca recebeu
       let shouldGiveBonus = false;
 
       if (!lastBonus) {
-        shouldGiveBonus = true; // Primeiro acesso (Welcome Bonus)
+
+        shouldGiveBonus = true; 
       } else {
         const lastDate = new Date(lastBonus);
-        if (now.getTime() - lastDate.getTime() > 30 * 24 * 60 * 60 * 1000) {
-          shouldGiveBonus = true;
-        }
+
+
+
+        const diffTime = Math.abs(now.getTime() - lastDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        if (diffDays >= 30) shouldGiveBonus = true;
       }
 
       if (shouldGiveBonus) {
-        await sdk.credits.add(user.uid, bonusAmount, 'regular');
+
+        // Adiciona 10 créditos (exemplo)
+        await sdk.credits.add(user.uid, 10, 'regular');
         await sdk.credits.updateLastBonusDate(user.uid, now.toISOString());
         
-        const uiStore = useUiStore();
+
         uiStore.triggerToast({ 
-          message: `🎁 Parabéns! Você ganhou ${bonusAmount} créditos de bônus mensal!`, 
+
+          message: `🎁 Parabéns! Você ganhou 10 créditos de bônus mensal!`, 
           type: 'success',
           duration: 6000
         });
@@ -82,42 +116,62 @@ export const useUserStore = defineStore('user', () => {
     if (!user) return;
 
     const db = getDatabase();
-    // Ajuste o caminho conforme dbVersion definido no SDK (vazio agora)
-    userRef = dbRef(db, `users/${user.uid}`);
+
+
+    const userPath = `users/${user.uid}`;
+    const userRef = dbRef(db, userPath);
     
-    onValue(userRef, (snap) => {
+
+    userRefUnsub = onValue(userRef, (snap) => {
       const data = snap.val() || {};
       credits.value = data.credits || 0;
       dailyCredits.value = data.dailyCredits || 0;
       dailyPlanExpiry.value = data.dailyPlanExpiry || null;
       lastBonusDate.value = data.lastBonusDate || null;
       referralData.value = data.referralData || null;
+
+      // Verifica se plano diário está ativo
+      if (data.dailyPlanExpiry) {
+          isDailyPlanActive.value = new Date(data.dailyPlanExpiry) > new Date();
+      } else {
+          isDailyPlanActive.value = false;
+      }
     });
 
-    historyRef = dbRef(db, `users/${user.uid}/referralHistory`);
-    onValue(historyRef, (snap) => {
+
+
+    const historyRef = dbRef(db, `users/${user.uid}/referralHistory`);
+    historyRefUnsub = onValue(historyRef, (snap) => {
       const data = snap.val() || {};
-      referralHistory.value = Object.values(data);
+
+      referralHistory.value = Object.values(data) as ReferralHistoryItem[];
     });
 
-    spendingRef = dbRef(db, `users/${user.uid}/spendingHistory`);
-    onValue(spendingRef, (snap) => {
+
+
+    const spendingRef = dbRef(db, `users/${user.uid}/spendingHistory`);
+    spendingRefUnsub = onValue(spendingRef, (snap) => {
       const data = snap.val() || {};
-      spendingHistory.value = Object.values(data).sort((a: any, b: any) => 
+
+      spendingHistory.value = (Object.values(data) as SpendingHistoryItem[]).sort((a, b) => 
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
     });
   };
 
   const stopListening = () => {
-    if (userRef) off(userRef);
-    if (historyRef) off(historyRef);
-    if (spendingRef) off(spendingRef);
+
+
+
+    if (userRefUnsub) userRefUnsub();
+    if (historyRefUnsub) historyRefUnsub();
+    if (spendingRefUnsub) spendingRefUnsub();
   };
 
   return {
     credits,
     dailyCredits,
+    isDailyPlanActive,
     dailyPlanExpiry,
     lastBonusDate,
     referralData,
@@ -125,6 +179,7 @@ export const useUserStore = defineStore('user', () => {
     spendingHistory,
     listenToUserData,
     checkMonthlyBonus,
-    stopListening
+    stopListening,
+    checkAuthError
   };
 });

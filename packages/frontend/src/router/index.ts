@@ -10,7 +10,8 @@ import Home from '@/views/portfolio/Home.vue';
 import About from '@/views/portfolio/About.vue';
 import Experience from '@/views/portfolio/Experience.vue';
 import Skills from '@/views/portfolio/Skills.vue';
-import Portfolio from '@/views/portfolio/Portfolio.vue';
+import Projects from '@/views/portfolio/Projects.vue'; // RENOMEADO
+import Project from '@/views/portfolio/Project.vue';   // NOVO
 import Blog from '@/views/portfolio/Blog.vue';
 import Article from '@/views/portfolio/Article.vue';
 import PublicTutorials from '@/views/portfolio/Tutorials.vue';
@@ -131,7 +132,8 @@ const routes: Array<RouteRecordRaw> = [
       { path: 'sobre', component: About, name: 'PortfolioAbout' },
       { path: 'experiencia', component: Experience, name: 'PortfolioExperience' },
       { path: 'habilidades', component: Skills, name: 'PortfolioSkills' },
-      { path: 'projetos', component: Portfolio, name: 'PortfolioProjects' },
+      { path: 'projetos', component: Projects, name: 'PortfolioProjects' },
+      { path: 'projeto/:id', component: Project, name: 'PortfolioProject' }, // NOVA ROTA
       { path: 'blog', component: Blog, name: 'PortfolioBlog' },
       { path: 'artigo/:articleSlug', component: Article, name: 'PortfolioArticle' },
       { path: 'tutoriais', component: PublicTutorials, name: 'PortfolioTutorials' },

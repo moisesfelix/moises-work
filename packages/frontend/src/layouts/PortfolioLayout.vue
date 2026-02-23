@@ -1,6 +1,6 @@
 <template>
   <div class="portfolio-layout">
-    <div v-if="loading" class="loading-screen">
+    <div v-if="loading && !portfolioLoaded" class="loading-screen">
       <div class="spinner"></div>
       <p>Carregando portfólio...</p>
     </div>
@@ -10,20 +10,19 @@
       <router-link to="/" class="btn">Voltar ao Início</router-link>
     </div>
     <div v-else class="app-container">
-      <!-- Reuse UnifiedLayout structure here but for public portfolio viewing -->
-        <TheHeader />
-        <div class="layout-container">
-          <main class="main-content">
-             <router-view :slug="slug" />
-          </main>
-        </div>
-        <TheFooter class="layout-footer" />
+      <TheHeader />
+      <div class="layout-container">
+        <main class="main-content">
+           <router-view />
+        </main>
+      </div>
+      <TheFooter class="layout-footer" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, watch } from "vue";
+import { computed, onMounted, watch, ref } from "vue";
 import { usePortfoliosStore } from "@/stores/portfolios";
 import { useUiStore }         from "@/stores/ui";
 import { useRoute } from "vue-router";
@@ -37,13 +36,20 @@ const route           = useRoute();
 const slug    = computed(() => route.params.slug as string);
 const loading = computed(() => uiStore.isLoading);
 const error   = computed(() => uiStore.error);
+const portfolioLoaded = ref(false);
 
 const loadPortfolio = async () => {
-  if (slug.value) await portfoliosStore.fetchPortfolioData(slug.value);
+  if (slug.value && (!portfoliosStore.activePortfolioId || portfoliosStore.activePortfolioSlug !== slug.value)) {
+    await portfoliosStore.fetchPortfolioData(slug.value);
+  }
+  portfolioLoaded.value = true;
 };
 
 onMounted(() => loadPortfolio());
-watch(slug, loadPortfolio);
+watch(slug, () => {
+    portfolioLoaded.value = false;
+    loadPortfolio();
+});
 </script>
 
 <style scoped>
