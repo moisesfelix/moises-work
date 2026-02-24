@@ -16,7 +16,7 @@
                       </div>
                       <h3>{{ tutorial.title }}</h3>
                       <p>{{ tutorial.excerpt }}</p>
-                      <router-link :to="'/tutorial/' + tutorial.slug" class="btn" style="margin-top: 20px; padding: 10px 25px;">
+                      <router-link :to="`/${route.params.slug}/tutorial/${tutorial.slug}`" class="btn" style="margin-top: 20px; padding: 10px 25px;">
                           <i class="fas fa-play-circle"></i> Começar Tutorial
                       </router-link>
                   </div>
@@ -28,8 +28,10 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { useRoute } from "vue-router";
 import { usePortfoliosStore } from "@/stores/portfolios";
 
+const route = useRoute();
 const portfoliosStore = usePortfoliosStore();
 const tutorials       = computed(() => portfoliosStore.tutorials);
 </script>

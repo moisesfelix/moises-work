@@ -49,7 +49,7 @@
               </div>
               
               <div class="tutorial-footer">
-                  <router-link to="/tutoriais" class="btn btn-back">
+                  <router-link :to="`/${route.params.slug}/tutoriais`" class="btn btn-back">
                       <i class="fas fa-arrow-left"></i> Voltar para Tutoriais
                   </router-link>
               </div>
@@ -58,7 +58,7 @@
           <div v-else class="not-found">
               <i class="fas fa-search" style="font-size: 3rem; margin-bottom: 1rem; color: #ccc;"></i>
               <p>Tutorial não encontrado.</p>
-              <router-link to="/tutoriais" class="btn btn-back">Voltar</router-link>
+              <router-link :to="`/${route.params.slug}/tutoriais`" class="btn btn-back">Voltar</router-link>
           </div>
       </div>
   </div>
