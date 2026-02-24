@@ -1,121 +1,126 @@
 <template>
-  <div class="project-details-page" v-if="project">
-    <header class="project-header" :style="{ backgroundImage: `url(${project.image || placeholderImage})` }">
-      <div class="overlay"></div>
-      <div class="container header-content">
-        <span class="category-badge">{{ project.category || 'Geral' }}</span>
-        <h1 class="project-title">{{ project.title }}</h1>
-        <div class="project-meta">
-          <div class="tags">
-            <span v-for="tag in tagList" :key="tag" class="tag">{{ tag }}</span>
+  <div class="project-page">
+    <div class="container">
+      <div v-if="project" class="project-wrapper">
+
+        <!-- HEADER -->
+        <div class="project-header">
+          <span class="badge">{{ project.category || 'Geral' }}</span>
+          <h1>{{ project.title }}</h1>
+
+          <div class="project-meta">
+            <div class="meta-item" v-if="project.date">
+              <i class="fas fa-calendar-alt"></i> {{ project.date }}
+            </div>
+            <div class="meta-item" v-if="githubData">
+              <i class="fas fa-star"></i> {{ githubData.stars }} Stars
+            </div>
+            <div class="meta-item" v-if="githubData">
+              <i class="fas fa-code-branch"></i> {{ githubData.forks }} Forks
+            </div>
+
+            <a v-if="project.githubUrl" :href="project.githubUrl" target="_blank" class="btn-action">
+              <i class="fab fa-github"></i>
+              <span>Código Fonte</span>
+            </a>
+            <a v-if="project.demoUrl" :href="project.demoUrl" target="_blank" class="btn-action btn-demo">
+              <i class="fas fa-external-link-alt"></i>
+              <span>Live Demo</span>
+            </a>
+          </div>
+
+          <div class="project-tags">
+            <span v-for="tag in tagList" :key="tag" class="tag-badge">#{{ tag }}</span>
           </div>
         </div>
-      </div>
-    </header>
 
-    <div class="container content-grid">
-      <main class="main-content">
-        <section class="description-section">
+        <!-- IMAGE -->
+        <div class="image-container">
+          <img :src="project.image || placeholderImage" :alt="project.title" class="project-image" />
+        </div>
+
+        <!-- DESCRIPTION -->
+        <div class="project-body">
           <h2>Sobre o Projeto</h2>
-          <p class="description-text">{{ project.description }}</p>
-        </section>
+          <p>{{ project.description }}</p>
+        </div>
 
-        <!-- GitHub Integration Section -->
-        <section v-if="githubData" class="github-section">
-          <div class="github-header">
-            <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub" class="github-logo" />
-            <h3>Repositório GitHub</h3>
-            <a :href="project.githubUrl" target="_blank" class="github-link">Ver no GitHub &nearr;</a>
+        <!-- GITHUB STATS -->
+        <div v-if="githubData" class="github-stats">
+          <div class="stat-box">
+            <span class="stat-value">{{ githubData.stars }}</span>
+            <span class="stat-label">Stars</span>
           </div>
+          <div class="stat-box">
+            <span class="stat-value">{{ githubData.forks }}</span>
+            <span class="stat-label">Forks</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value">{{ githubData.issues }}</span>
+            <span class="stat-label">Issues</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-value">{{ githubData.lastCommitDate }}</span>
+            <span class="stat-label">Último Commit</span>
+          </div>
+        </div>
 
-          <div class="github-stats">
-            <div class="stat-box">
-              <span class="stat-value">{{ githubData.stars }}</span>
-              <span class="stat-label">Stars</span>
-            </div>
-            <div class="stat-box">
-              <span class="stat-value">{{ githubData.forks }}</span>
-              <span class="stat-label">Forks</span>
-            </div>
-            <div class="stat-box">
-              <span class="stat-value">{{ githubData.issues }}</span>
-              <span class="stat-label">Issues</span>
-            </div>
-            <div class="stat-box">
-              <span class="stat-value">{{ githubData.lastCommitDate }}</span>
-              <span class="stat-label">Último Commit</span>
+        <!-- LANGUAGES -->
+        <div v-if="githubData && githubData.languages && Object.keys(githubData.languages).length" class="section">
+          <h3 class="section-title"><i class="fas fa-chart-bar"></i> Linguagens</h3>
+          <div class="languages-list">
+            <div v-for="(percentage, lang) in githubData.languages" :key="lang" class="lang-item">
+              <div class="lang-row">
+                <span class="lang-name">{{ lang }}</span>
+                <span class="lang-percent">{{ percentage }}%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: percentage + '%' }"></div>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div v-if="githubData.readme" class="readme-content">
-            <h4>README.md</h4>
-            <div class="markdown-body" v-html="renderedReadme"></div>
-          </div>
-        </section>
+        <!-- README -->
+        <div v-if="githubData && githubData.readme" class="section">
+          <h3 class="section-title"><i class="fas fa-book-open"></i> README.md</h3>
+          <div class="readme-content markdown-body" v-html="renderedReadme"></div>
+        </div>
 
-        <!-- Commits History -->
-        <section v-if="githubData && githubData.commits && githubData.commits.length" class="commits-section">
-            <h3>Últimos Commits</h3>
-            <ul class="commits-list">
-                <li v-for="commit in githubData.commits" :key="commit.sha" class="commit-item">
-                    <div class="commit-message">{{ commit.message }}</div>
-                    <div class="commit-meta">
-                        <span class="commit-author">{{ commit.author }}</span>
-                        <span class="commit-date">{{ commit.date }}</span>
-                    </div>
-                </li>
-            </ul>
-        </section>
-
-      </main>
-
-      <aside class="sidebar">
-        <div class="sidebar-card">
-          <h3>Links do Projeto</h3>
-          <ul class="project-links">
-            <li v-if="project.githubUrl">
-              <a :href="project.githubUrl" target="_blank" class="btn btn-github">
-                <i class="fab fa-github"></i> Código Fonte
-              </a>
-            </li>
-            <li v-if="project.demoUrl">
-              <a :href="project.demoUrl" target="_blank" class="btn btn-demo">
-                <i class="fas fa-external-link-alt"></i> Live Demo
-              </a>
-            </li>
-            <li v-if="project.articleUrl">
-              <a :href="project.articleUrl" target="_blank" class="btn btn-outline">
-                Ler Artigo
-              </a>
-            </li>
-            <li v-if="project.tutorialUrl">
-              <a :href="project.tutorialUrl" target="_blank" class="btn btn-outline">
-                Ver Tutorial
-              </a>
+        <!-- COMMITS -->
+        <div v-if="githubData && githubData.commits && githubData.commits.length" class="section">
+          <h3 class="section-title"><i class="fas fa-history"></i> Últimos Commits</h3>
+          <ul class="commits-list">
+            <li v-for="commit in githubData.commits" :key="commit.sha" class="commit-item">
+              <div class="commit-message">{{ commit.message }}</div>
+              <div class="commit-meta">
+                <span class="commit-author">{{ commit.author }}</span>
+                <span class="commit-date">{{ commit.date }}</span>
+              </div>
             </li>
           </ul>
         </div>
 
-        <div class="sidebar-card" v-if="githubData && githubData.languages">
-            <h3>Linguagens</h3>
-            <div class="languages-list">
-                <div v-for="(percentage, lang) in githubData.languages" :key="lang" class="lang-item">
-                    <span class="lang-name">{{ lang }}</span>
-                    <span class="lang-percent">{{ percentage }}%</span>
-                    <div class="progress-bar">
-                        <div class="progress-fill" :style="{ width: percentage + '%' }"></div>
-                    </div>
-                </div>
-            </div>
+        <!-- FOOTER -->
+        <div class="project-footer">
+          <router-link :to="`/${route.params.slug}/projetos`" class="btn btn-back">
+            <i class="fas fa-arrow-left"></i> Voltar para Projetos
+          </router-link>
         </div>
-      </aside>
+
+      </div>
+
+      <div v-else-if="loading" class="not-found">
+        <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+        <p>Carregando projeto...</p>
+      </div>
+
+      <div v-else class="not-found">
+        <i class="fas fa-folder-open" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+        <p>Projeto não encontrado.</p>
+        <router-link :to="`/${route.params.slug}/projects`" class="btn btn-back">Voltar</router-link>
+      </div>
     </div>
-  </div>
-  <div v-else-if="loading" class="loading-state">
-    Carregando projeto...
-  </div>
- <div v-else class="error-state">
-        Projeto não encontrado.
   </div>
 </template>
 
@@ -124,294 +129,506 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { usePortfoliosStore } from '@/stores/portfolios';
 import { GitHubRepoSDK, GithubUtils } from '@/sdk/GitHubSDK';
-import { marked } from 'marked'; // Assumindo que você tem marked instalado ou similar para renderizar MD
+import { marked } from 'marked';
 
-const route = useRoute();
-const portfoliosStore = usePortfoliosStore();
-const project = ref<any>(null);
-const loading = ref(true);
-const githubData = ref<any>(null);
-const placeholderImage = "https://via.placeholder.com/1200x400?text=Project+Cover";
+const route            = useRoute();
+const portfoliosStore  = usePortfoliosStore();
+const project          = ref<any>(null);
+const loading          = ref(true);
+const githubData       = ref<any>(null);
+const placeholderImage = "https://via.placeholder.com/800x400?text=Project+Cover";
 
 const tagList = computed(() => {
-    if (!project.value?.tags) return [];
-    return Array.isArray(project.value.tags) ? project.value.tags : project.value.tags.split(',').map((t: string) => t.trim());
+  if (!project.value?.tags) return [];
+  return Array.isArray(project.value.tags)
+    ? project.value.tags
+    : project.value.tags.split(',').map((t: string) => t.trim());
 });
 
 const renderedReadme = computed(() => {
-    if (!githubData.value?.readme) return '';
-    return marked(githubData.value.readme);
+  if (!githubData.value?.readme) return '';
+  return marked(githubData.value.readme);
 });
 
 onMounted(async () => {
-    const projectId = route.params.id as string;
-    await portfoliosStore.fetchPortfolioData();
-    project.value = portfoliosStore.projects.find((p: any) => p.id === projectId);
-    
-    if (project.value && project.value.githubUrl) {
-        await loadGithubData(project.value.githubUrl);
-    }
-    
-    loading.value = false;
+  const projectId = route.params.id as string;
+  await portfoliosStore.fetchPortfolioData();
+  project.value = portfoliosStore.projects.find((p: any) => p.id === projectId);
+
+  if (project.value?.githubUrl) {
+    await loadGithubData(project.value.githubUrl);
+  }
+
+  loading.value = false;
 });
 
 const loadGithubData = async (url: string) => {
-    const repoInfo = GithubUtils.parseUrl(url);
-    if (!repoInfo) return;
+  const repoInfo = GithubUtils.parseUrl(url);
+  if (!repoInfo) return;
 
-    try {
-        const ghSdk = new GitHubRepoSDK(repoInfo.owner, repoInfo.repo);
-        
-        // Parallel requests for speed
-        const [info, readme, languages, commits] = await Promise.all([
-            ghSdk.getRepoInfo().catch(() => ({ stargazers_count: 0, forks_count: 0, open_issues_count: 0, pushed_at: new Date().toISOString() })),
-            ghSdk.getReadme().catch(() => ({ decoded: '' })),
-            ghSdk.getLanguages().catch(() => ({})),
-            ghSdk.getCommits({ per_page: 5 }).catch(() => ([]))
-        ]);
+  try {
+    const ghSdk = new GitHubRepoSDK(repoInfo.owner, repoInfo.repo);
 
-        // Process Languages to percentages
-        const totalBytes = Object.values(languages).reduce((a: any, b: any) => a + b, 0) as number;
-        const langStats: any = {};
-        if (totalBytes > 0) {
-          Object.entries(languages).forEach(([lang, bytes]: [string, any]) => {
-            const percent = ((bytes / totalBytes) * 100).toFixed(1);
-            if (parseFloat(percent) > 1.0) langStats[lang] = percent; // Filter tiny bits
-        });
-        }
+    const [info, readme, languages, commits] = await Promise.all([
+      ghSdk.getRepoInfo().catch(() => ({ stargazers_count: 0, forks_count: 0, open_issues_count: 0, pushed_at: new Date().toISOString() })),
+      ghSdk.getReadme().catch(() => ({ decoded: '' })),
+      ghSdk.getLanguages().catch(() => ({})),
+      ghSdk.getCommits({ per_page: 5 }).catch(() => [])
+    ]);
 
-        githubData.value = {
-            stars: info.stargazers_count,
-            forks: info.forks_count,
-            issues: info.open_issues_count,
-            lastCommitDate: new Date(info.pushed_at).toLocaleDateString('pt-BR'),
-            readme: readme.decoded,
-            languages: langStats,
-            commits: commits.map((c: any) => ({
-                message: c.commit.message,
-                author: c.commit.author.name,
-                date: new Date(c.commit.author.date).toLocaleDateString('pt-BR'),
-                sha: c.sha
-            }))
-        };
-    } catch (e) {
-        console.error("Erro ao carregar dados do GitHub:", e);
+    const totalBytes = Object.values(languages).reduce((a: any, b: any) => a + b, 0) as number;
+    const langStats: any = {};
+    if (totalBytes > 0) {
+      Object.entries(languages).forEach(([lang, bytes]: [string, any]) => {
+        const percent = ((bytes / totalBytes) * 100).toFixed(1);
+        if (parseFloat(percent) > 1.0) langStats[lang] = percent;
+      });
     }
-};
 
+    githubData.value = {
+      stars: info.stargazers_count,
+      forks: info.forks_count,
+      issues: info.open_issues_count,
+      lastCommitDate: new Date(info.pushed_at).toLocaleDateString('pt-BR'),
+      readme: readme.decoded,
+      languages: langStats,
+      commits: commits.map((c: any) => ({
+        sha: c.sha,
+        message: c.commit.message,
+        author: c.commit.author.name,
+        date: new Date(c.commit.author.date).toLocaleDateString('pt-BR'),
+      }))
+    };
+  } catch (e) {
+    console.error("Erro ao carregar dados do GitHub:", e);
+  }
+};
 </script>
 
 <style scoped>
-.project-details-page {
-  background-color: #f8f9fa;
+/* ============================================================
+   PAGE
+   ============================================================ */
+.project-page {
+  padding: clamp(20px, 4vw, 40px) clamp(16px, 4vw, 20px);
+  background-color: var(--background-body);
+  color: var(--text-color-body);
   min-height: 100vh;
-  padding-bottom: 50px;
 }
 
-.project-header {
-  height: 400px;
-  background-size: cover;
-  background-position: center;
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  color: white;
-}
-
-.overlay {
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-}
-
-.header-content {
-  position: relative;
-  z-index: 2;
-  padding-bottom: 40px;
+.container {
+  max-width: 800px;
+  margin: 0 auto;
   width: 100%;
 }
 
-.category-badge {
-  background: #5b5fab;
-  padding: 5px 15px;
-  border-radius: 20px;
-  text-transform: uppercase;
+/* ============================================================
+   WRAPPER
+   ============================================================ */
+.project-wrapper {
+  background: var(--background-card);
+  padding: clamp(20px, 5vw, 40px);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+/* ============================================================
+   HEADER
+   ============================================================ */
+.project-header {
+  margin-bottom: 0;
+}
+
+.project-header h1 {
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
+  font-weight: 800;
+  color: var(--text-color-heading);
+  line-height: 1.2;
+  margin: 10px 0 15px;
+  word-break: break-word;
+}
+
+.project-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--text-color-paragraph);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   BADGE
+   ============================================================ */
+.badge {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--primary);
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-weight: 600;
   font-size: 0.8rem;
-  font-weight: bold;
-  margin-bottom: 10px;
+  text-transform: uppercase;
   display: inline-block;
 }
 
-.project-title {
-  font-size: 3rem;
-  margin: 10px 0;
-  font-weight: 800;
-}
-
-.content-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 40px;
-  margin-top: 40px;
-}
-
-.main-content {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-}
-
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.sidebar-card {
-  background: white;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-}
-
-.sidebar-card h3 {
-  margin-top: 0;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
-  margin-bottom: 15px;
-  font-size: 1.1rem;
-}
-
-.project-links {
-  list-style: none;
-  padding: 0;
-}
-
-.project-links li {
-  margin-bottom: 10px;
-}
-
-.btn {
-  display: block;
-  text-align: center;
-  padding: 12px;
-  border-radius: 8px;
-  text-decoration: none;
-  font-weight: 600;
-  transition: 0.2s;
-}
-
-.btn-github { background: #24292e; color: white; }
-.btn-demo { background: #27ae60; color: white; }
-.btn-outline { border: 1px solid #ddd; color: #555; }
-.btn:hover { opacity: 0.9; transform: translateY(-2px); }
-
-/* GitHub Section Styles */
-.github-section {
-  margin-top: 40px;
-  border-top: 1px solid #eee;
-  padding-top: 30px;
-}
-
-.github-header {
-  display: flex;
+/* ============================================================
+   ACTION BUTTONS — mesmo estilo de btn-speech do artigo
+   ============================================================ */
+.btn-action {
+  background: transparent;
+  border: 1px solid var(--primary);
+  color: var(--primary);
+  padding: 4px 12px;
+  border-radius: 99px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: inline-flex;
   align-items: center;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 5px;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+  white-space: nowrap;
+  text-decoration: none;
 }
 
-.github-logo { width: 32px; height: 32px; }
+.btn-action:hover {
+  background: var(--primary);
+  color: white;
+  transform: translateY(-1px);
+}
 
+.btn-action.btn-demo {
+  border-color: #27ae60;
+  color: #27ae60;
+}
+
+.btn-action.btn-demo:hover {
+  background: #27ae60;
+  color: white;
+}
+
+/* ============================================================
+   TAGS — idêntico ao artigo
+   ============================================================ */
+.project-tags {
+  margin-top: 15px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag-badge {
+  background-color: var(--background-body);
+  color: var(--primary);
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-family: monospace;
+  border: 1px solid var(--timeline-border);
+}
+
+/* ============================================================
+   IMAGE — sangria negativa igual ao artigo
+   ============================================================ */
+.image-container {
+  margin: 0 calc(-1 * clamp(20px, 5vw, 40px)) 40px;
+  overflow: hidden;
+}
+
+.project-image {
+  width: 100%;
+  height: auto;
+  max-height: 450px;
+  object-fit: cover;
+  display: block;
+}
+
+/* ============================================================
+   BODY
+   ============================================================ */
+.project-body {
+  font-size: clamp(0.95rem, 2vw, 1.125rem);
+  line-height: 1.8;
+  color: var(--text-color-paragraph);
+  margin-bottom: 30px;
+  overflow-wrap: break-word;
+}
+
+.project-body h2 {
+  color: var(--text-color-heading);
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  margin-top: 0;
+}
+
+/* ============================================================
+   GITHUB STATS
+   ============================================================ */
 .github-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
+  gap: clamp(8px, 2vw, 15px);
   margin-bottom: 30px;
 }
 
 .stat-box {
-  background: #f8f9fa;
-  padding: 15px;
+  background: var(--background-body);
+  padding: clamp(10px, 2vw, 15px);
   border-radius: 8px;
   text-align: center;
+  border: 1px solid var(--timeline-border);
 }
 
 .stat-value {
   display: block;
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
+  font-size: clamp(1rem, 3vw, 1.5rem);
+  font-weight: 700;
+  color: var(--text-color-heading);
+  word-break: break-word;
 }
 
 .stat-label {
-  font-size: 0.8rem;
-  color: #666;
+  font-size: 0.75rem;
+  color: var(--text-color-paragraph);
   text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+.section {
+  border-top: 1px solid var(--timeline-border);
+  padding-top: 30px;
+  margin-bottom: 30px;
+}
+
+.section-title {
+  color: var(--text-color-heading);
+  font-size: clamp(1rem, 2.5vw, 1.15rem);
+  margin-top: 0;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ============================================================
+   LANGUAGES
+   ============================================================ */
+.languages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lang-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.lang-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text-color-body);
+}
+
+.lang-percent {
+  font-size: 0.82rem;
+  color: var(--text-color-paragraph);
+}
+
+.progress-bar {
+  height: 6px;
+  background: var(--timeline-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* ============================================================
+   README
+   ============================================================ */
 .readme-content {
-  background: #fff;
-  border: 1px solid #e1e4e8;
-  border-radius: 6px;
-  padding: 20px;
+  border: 1px solid var(--timeline-border);
+  border-radius: 8px;
+  padding: clamp(12px, 3vw, 20px);
   max-height: 500px;
   overflow-y: auto;
+  overflow-x: auto;
+  background: var(--background-body);
 }
 
-/* Commits */
+.markdown-body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-size: clamp(13px, 1.5vw, 15px);
+  line-height: 1.6;
+  word-wrap: break-word;
+  color: var(--text-color-paragraph);
+}
+
+.markdown-body h1,
+.markdown-body h2 {
+  border-bottom: 1px solid var(--timeline-border);
+  padding-bottom: 0.3em;
+  color: var(--text-color-heading);
+}
+
+.markdown-body code {
+  background-color: rgba(27, 31, 35, 0.07);
+  border-radius: 3px;
+  font-size: 85%;
+  padding: 0.2em 0.4em;
+}
+
+.markdown-body pre {
+  background-color: #1e1e1e;
+  border-radius: 6px;
+  font-size: 85%;
+  line-height: 1.45;
+  overflow: auto;
+  padding: 16px;
+  max-width: 100%;
+}
+
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ============================================================
+   COMMITS
+   ============================================================ */
 .commits-list {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 .commit-item {
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--timeline-border);
   padding: 10px 0;
+}
+
+.commit-item:last-child {
+  border-bottom: none;
 }
 
 .commit-message {
   font-weight: 500;
-  color: #333;
+  color: var(--text-color-body);
+  font-size: clamp(0.85rem, 1.5vw, 0.95rem);
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 .commit-meta {
-  font-size: 0.85rem;
-  color: #888;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-color-paragraph);
   margin-top: 4px;
 }
 
-/* Languages */
-.lang-item { margin-bottom: 10px; }
-.lang-name { font-weight: 600; font-size: 0.9rem; }
-.lang-percent { float: right; font-size: 0.85rem; color: #666; }
-.progress-bar {
-  height: 6px;
-  background: #eee;
-  border-radius: 3px;
-  margin-top: 4px;
-  overflow: hidden;
-}
-.progress-fill {
-  height: 100%;
-  background: #5b5fab;
+.commit-author {
+  font-weight: 600;
 }
 
-.loading-state, .error-state {
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.project-footer {
+  border-top: 1px solid var(--timeline-border);
+  margin-top: 40px;
+  padding-top: 30px;
   text-align: center;
-  padding: 100px;
-  font-size: 1.5rem;
-  color: #666;
 }
 
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--primary);
+  background: rgba(59, 130, 246, 0.1);
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-back:hover {
+  background: var(--primary);
+  color: white;
+}
+
+/* ============================================================
+   NOT FOUND / LOADING
+   ============================================================ */
+.not-found {
+  text-align: center;
+  padding: clamp(40px, 10vw, 60px) 0;
+  color: var(--text-color-paragraph);
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
 @media (max-width: 768px) {
-  .content-grid { grid-template-columns: 1fr; }
-  .github-stats { grid-template-columns: repeat(2, 1fr); }
+  .container {
+    padding: 0;
+  }
+
+  .project-wrapper {
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .github-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-/* Markdown styling simplified */
-.markdown-body { font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif; font-size: 16px; line-height: 1.5; word-wrap: break-word; }
-.markdown-body h1, .markdown-body h2 { border-bottom: 1px solid #eaecef; padding-bottom: .3em; }
-.markdown-body code { background-color: rgba(27,31,35,.05); border-radius: 3px; font-size: 85%; margin: 0; padding: .2em .4em; }
-.markdown-body pre { background-color: #f6f8fa; border-radius: 3px; font-size: 85%; line-height: 1.45; overflow: auto; padding: 16px; }
+@media (max-width: 480px) {
+  /* Oculta label dos botões, mantém só ícone */
+  .btn-action span {
+    display: none;
+  }
+
+  .btn-action {
+    padding: 6px 10px;
+  }
+
+  .project-image {
+    max-height: 220px;
+  }
+}
+
+@media (max-width: 360px) {
+  .badge,
+  .tag-badge {
+    font-size: 0.72rem;
+    padding: 3px 7px;
+  }
+
+  .btn-back {
+    padding: 10px 16px;
+    font-size: 0.88rem;
+  }
+}
 </style>
