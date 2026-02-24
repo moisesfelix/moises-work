@@ -359,22 +359,37 @@ export const usePortfoliosStore = defineStore('portfolios', {
       const current = this.currentRoadmap;
       if (!current) return;
 
-      const steps = current.steps.map(step => {
+      const updatedSteps = current.steps.map(step => {
         if (step.id !== stepId) return step;
-        const updatedStep = { ...step, completed };
-        if (completed) {
-          updatedStep.completedAt = new Date().toISOString();
-        } else {
-          delete updatedStep.completedAt;
+
+        const updatedStep = { ...step };
+        if (completed !== undefined) {
+          updatedStep.completed = completed;
+          if (completed) {
+            updatedStep.completedAt = new Date().toISOString();
+          } else {
+            delete updatedStep.completedAt;
+          }
         }
-        if (meta.articleId)  updatedStep.generatedArticleId  = meta.articleId;
-        if (meta.tutorialId) updatedStep.generatedTutorialId = meta.tutorialId;
-        if (meta.projectId)  updatedStep.generatedProjectId  = meta.projectId;
-        if (meta.quizResult) updatedStep.quiz                = meta.quizResult;
+        
+        if (meta.articleId) {
+          updatedStep.generatedArticleId = meta.articleId;
+        }
+        if (meta.tutorialId) {
+          updatedStep.generatedTutorialId = meta.tutorialId;
+        }
+        if (meta.projectId) {
+          updatedStep.generatedProjectId = meta.projectId;
+        }
+        if (meta.quizResult) {
+          updatedStep.quiz = meta.quizResult;
+        }
+
         return updatedStep;
       });
 
-      await this.saveRoadmap({ ...current, steps });
+      const updatedRoadmap = { ...current, steps: updatedSteps };
+      await this.saveRoadmap(updatedRoadmap);
     },
 
     setCurrentRoadmapId(id: string) {

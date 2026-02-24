@@ -124,13 +124,19 @@
               ✔️ Concluída
             </button>
 
-            <button @click="generateArticleForStep(step)" class="btn btn-small btn-outline" :disabled="!step.quiz?.passed || step.generatedArticleId || generating" :title="!step.quiz?.passed ? 'Complete o quiz primeiro' : ''">
+            <button @click="generateArticleForStep(step)" class="btn btn-small btn-outline" 
+              :disabled="!isStepQualifiedForGeneration(step) || step.generatedArticleId || generating" 
+              :title="getGenerationButtonTitle(step)">
               📝 {{ step.generatedArticleId ? 'Artigo gerado' : 'Gerar artigo' }}
             </button>
-            <button @click="generateTutorialForStep(step)" class="btn btn-small btn-outline" :disabled="!step.quiz?.passed || step.generatedTutorialId || generating" :title="!step.quiz?.passed ? 'Complete o quiz primeiro' : ''">
+            <button @click="generateTutorialForStep(step)" class="btn btn-small btn-outline" 
+              :disabled="!isStepQualifiedForGeneration(step) || step.generatedTutorialId || generating" 
+              :title="getGenerationButtonTitle(step)">
               🎓 {{ step.generatedTutorialId ? 'Tutorial gerado' : 'Gerar tutorial' }}
             </button>
-            <button @click="generateProjectForStep(step)" class="btn btn-small btn-outline" :disabled="!step.quiz?.passed || step.generatedProjectId || generating" :title="!step.quiz?.passed ? 'Complete o quiz primeiro' : ''">
+            <button @click="generateProjectForStep(step)" class="btn btn-small btn-outline" 
+              :disabled="!isStepQualifiedForGeneration(step) || step.generatedProjectId || generating" 
+              :title="getGenerationButtonTitle(step)">
               🛠️ {{ step.generatedProjectId ? 'Projeto criado' : 'Criar projeto' }}
             </button>
           </div>
@@ -252,12 +258,15 @@ import { useUserStore } from '@/stores/user';
 import { useAuthStore } from '@/stores/auth';
 import { AppSDK } from '@/sdk/AppSDK';
 
+import { useAiStore } from '@/stores/ai';
+
 const sdk = inject('sdk') as AppSDK;
 const portfoliosStore = usePortfoliosStore();
 const uiStore = useUiStore();
 const router = useRouter();
 const userStore = useUserStore();
 const authStore = useAuthStore();
+const aiStore = useAiStore();
 
 const roadmap = computed(() => portfoliosStore.currentRoadmap);
 const softSkills = computed(() => portfoliosStore.softSkills);
@@ -473,6 +482,17 @@ const markStepComplete = async (stepId: string) => {
   uiStore.triggerToast({ message: 'Etapa concluída!', type: 'success' });
 };
 
+const isStepQualifiedForGeneration = (step: any) => {
+  // Exige que a etapa esteja concluída e que o quiz tenha score >= 80%
+  return step.completed && step.quiz && step.quiz.score >= 80;
+};
+
+const getGenerationButtonTitle = (step: any) => {
+  if (!step.quiz || step.quiz.score < 80) return 'Necessário aprovação no quiz com 80% ou mais';
+  if (!step.completed) return 'Conclua a etapa para liberar a geração de conteúdo';
+  return '';
+};
+
 const generateArticleForStep = async (step: any) => {
   if (step.generatedArticleId) {
     router.push(`/admin/articles/edit/${step.generatedArticleId}`);
@@ -493,21 +513,18 @@ const generateArticleForStep = async (step: any) => {
   
   generating.value = true;
   try {
-    // Garante que a lista de artigos está carregada para não sobrescrever com array vazio se não tiver carregado
     if (!portfoliosStore.articles.length) {
-       await portfoliosStore.fetchData('articles');
+      await portfoliosStore.fetchData('articles');
     }
 
     const userPersona = localStorage.getItem('userPersona') || 'Desenvolvedor FullStack e Professor';
 
-    // Constrói um tópico rico com base nos objetivos de aprendizado
     const objectives = step.learningObjectives && step.learningObjectives.length 
       ? `\nObjetivos de aprendizado: ${step.learningObjectives.join(', ')}` 
       : '';
     
     const context = `${step.title}${objectives}`;
 
-    // Gerar artigo com base no título da etapa e objetivos
     const article = await apiGeminiService.generateArticle({
       topic: context,
       category: 'Aprendizado',
@@ -515,25 +532,34 @@ const generateArticleForStep = async (step: any) => {
       persona: userPersona
     });
     
-    // REMOVIDO: await sdk.credits.deduct(authStore.user?.uid!, cost, type);
-
-    // Salvar artigo
+    // Gera imagem uma única vez
+    let imageUrl = '';
+    if (article.makeImagePrompt) {
+      try {
+        const imageBlob = await apiGeminiService.generateImage(article.makeImagePrompt);
+        imageUrl = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(imageBlob);
+        });
+      } catch (e) {
+        console.warn('Falha ao gerar imagem:', e);
+      }
+    }
+    
     const newArticle = { 
       ...article, 
       id: Date.now().toString(), 
       date: new Date().toLocaleDateString('pt-BR'),
-      // Adiciona as tags da etapa ao artigo gerado para manter rastreabilidade
+      imageUrl,
       tags: [...(article.tags || []), ...(step.tags || [])]
     };
     
-    // Cria um novo array garantindo que é uma cópia
     const currentArticles = portfoliosStore.articles ? [...portfoliosStore.articles] : [];
     currentArticles.push(newArticle);
     
     await portfoliosStore.saveData({ type: 'articles', data: currentArticles });
-    
-    // Associar ao step
-    await portfoliosStore.updateStepCompletion(step.id, step.completed, { articleId: newArticle.id });
+    await portfoliosStore.updateStepCompletion(step.id, step.completed, { articleId: article.id });
     
     uiStore.triggerToast({ message: 'Artigo gerado com sucesso!', type: 'success' });
     router.push('/admin/articles');
@@ -551,7 +577,7 @@ const generateTutorialForStep = async (step: any) => {
     return;
   }
 
-  const { canExecute, cost, type } = sdk.credits.canUse({
+  const { canExecute, cost } = sdk.credits.canUse({
     credits: userStore.credits,
     dailyCredits: userStore.dailyCredits,
     isDailyPlanActive: userStore.dailyPlanExpiry && new Date(userStore.dailyPlanExpiry) > new Date()
@@ -565,10 +591,6 @@ const generateTutorialForStep = async (step: any) => {
   
   generating.value = true;
   try {
-    if (!portfoliosStore.tutorials.length) {
-       await portfoliosStore.fetchData('tutorials');
-    }
-
     const userPersona = localStorage.getItem('userPersona') || 'Desenvolvedor FullStack e Professor';
 
     // Enriquece o tópico com objetivos
@@ -576,27 +598,17 @@ const generateTutorialForStep = async (step: any) => {
       ? `. Foco nos seguintes pontos: ${step.learningObjectives.join(', ')}` 
       : '';
 
-    const tutorial = await apiGeminiService.generateTutorial({
+    // Usa a store centralizada de IA
+    const tutorial = await aiStore.generateTutorialWithAI({
       topic: `${step.title}${objectives}`,
       difficulty: 'Iniciante',
       category: 'Programação',
       persona: userPersona
+    }, {
+      tags: [...(step.tags || [])]
     });
     
-    // REMOVIDO: await sdk.credits.deduct(authStore.user?.uid!, cost, type);
-
-    const newTutorial = { 
-      ...tutorial, 
-      id: Date.now().toString(), 
-      date: new Date().toISOString(),
-      tags: [...(tutorial.tags || []), ...(step.tags || [])]
-    };
-
-    const currentTutorials = portfoliosStore.tutorials ? [...portfoliosStore.tutorials] : [];
-    currentTutorials.push(newTutorial);
-    
-    await portfoliosStore.saveData({ type: 'tutorials', data: currentTutorials });
-    await portfoliosStore.updateStepCompletion(step.id, step.completed, { tutorialId: newTutorial.id });
+    await portfoliosStore.updateStepCompletion(step.id, step.completed, { tutorialId: tutorial.id });
     
     uiStore.triggerToast({ message: 'Tutorial gerado!', type: 'success' });
     router.push('/admin/tutorials');
@@ -613,7 +625,7 @@ const generateProjectForStep = async (step: any) => {
     return;
   }
 
-  const { canExecute, cost, type } = sdk.credits.canUse({
+  const { canExecute, cost } = sdk.credits.canUse({
     credits: userStore.credits,
     dailyCredits: userStore.dailyCredits,
     isDailyPlanActive: userStore.dailyPlanExpiry && new Date(userStore.dailyPlanExpiry) > new Date()
@@ -627,34 +639,20 @@ const generateProjectForStep = async (step: any) => {
   
   generating.value = true;
   try {
-    if (!portfoliosStore.projects.length) {
-       await portfoliosStore.fetchData('projects');
-    }
-
     const userPersona = localStorage.getItem('userPersona') || 'Desenvolvedor FullStack e Professor';
 
-    // Usa as tags técnicas para sugestão de projeto, pois são mais precisas que os tópicos gerais
+    // Usa as tags técnicas para sugestão de projeto
     const techContext = (step.tags && step.tags.length > 0) ? step.tags : step.topics;
 
-    // Sugestão de projeto
-    const suggestion = await apiGeminiService.generateProjectSuggestion(techContext, 'iniciante', userPersona);
-    
-    // REMOVIDO: await sdk.credits.deduct(authStore.user?.uid!, cost, type);
+    // Usa a store centralizada de IA
+    const project = await aiStore.generateProjectFromTopicWithAI({
+        technologies: techContext,
+        level: 'iniciante',
+        persona: userPersona
+    }, {
+        tags: [...(step.tags || [])]
+    });
 
-    const project = {
-      id: Date.now().toString(),
-      title: suggestion.title,
-      description: suggestion.description,
-      image: '',
-      tags: [...suggestion.technologies, ...(step.tags || [])], // Garante que as tags da etapa estejam no projeto
-      category: 'Projeto de aprendizado',
-      githubUrl: '',
-    };
-    
-    const currentProjects = portfoliosStore.projects ? [...portfoliosStore.projects] : [];
-    currentProjects.push(project);
-
-    await portfoliosStore.saveData({ type: 'projects', data: currentProjects });
     await portfoliosStore.updateStepCompletion(step.id, step.completed, { projectId: project.id });
     
     uiStore.triggerToast({ message: 'Projeto criado!', type: 'success' });

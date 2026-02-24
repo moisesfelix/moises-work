@@ -7,28 +7,20 @@ import { useUserStore } from './user';
 
 export const useAiStore = defineStore('ai', {
   actions: {
-    async generateArticleWithAI(request: any) {
+    async generateArticleWithAI(request: any, extraData: any = {}) {
       const ui         = useUiStore();
       const portfolios = usePortfoliosStore();
       const user = useUserStore();
       ui.setLoading(true);
       ui.setError(null);
       try {
-        // A validação de créditos agora é feita no Articles.vue usando o SDK
-        // e no backend de forma atômica. Removemos a validação simplista aqui
-        // que causava conflito com o plano diário.
-        
-        // if (user.credits < 2) { ... } // REMOVIDO
-
         const generated  = await apiGeminiService.generateArticle(request);
         
         let imageUrl = 'https://via.placeholder.com/600x400';
         try {
-            // Tenta usar a imagem gerada se for uma URL válida, senão usa placeholder
             if (generated.makeImagePrompt && generated.makeImagePrompt.startsWith('http')) {
                 imageUrl = generated.makeImagePrompt;
             } else if (generated.makeImagePrompt) {
-                 // Tenta gerar a imagem real usando o prompt
                  try {
                     const urls = await storageService.uploadMultipleImages([generated.makeImagePrompt], 'articles');
                     if (urls.length > 0) {
@@ -48,26 +40,27 @@ export const useAiStore = defineStore('ai', {
           ...generated,
           image: imageUrl,
           date:  new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }),
+          ...extraData // Mescla dados extras (ex: tags do roadmap)
         };
+        
+        // Garante que tags sejam unidas se existirem em ambos
+        if (extraData.tags && generated.tags) {
+            article.tags = [...new Set([...generated.tags, ...extraData.tags])];
+        }
 
         const currentArticles = portfolios.articles || [];
         await portfolios.saveData({ type: 'articles', data: [...currentArticles, article] });
-        
-        // Debita créditos localmente (o backend já deve ter debitado se a API for integrada)
-        // Se a API não debita, fazemos aqui:
-        // user.credits -= 2; 
 
         return article;
       } catch (error: any) {
         ui.setError(error.message);
-        // user.checkAuthError(error.message) 
         throw error;
       } finally {
         ui.setLoading(false);
       }
     },
 
-    async generateTutorialWithAI(request: any) {
+    async generateTutorialWithAI(request: any, extraData: any = {}) {
       const ui         = useUiStore();
       const portfolios = usePortfoliosStore();
       const user = useUserStore();
@@ -80,7 +73,6 @@ export const useAiStore = defineStore('ai', {
            if (generated.makeImagePrompt && generated.makeImagePrompt.startsWith('http')) {
               imageUrl = generated.makeImagePrompt;
            } else if (generated.makeImagePrompt) {
-              // Tenta gerar a imagem real usando o prompt
               try {
                   const urls = await storageService.uploadMultipleImages([generated.makeImagePrompt], 'tutorials');
                   if (urls.length > 0) {
@@ -100,13 +92,71 @@ export const useAiStore = defineStore('ai', {
           ...generated,
           image: imageUrl,
           date:  new Date().toISOString(),
+          ...extraData
         };
 
-        await portfolios.saveData({ type: 'tutorials', data: [...portfolios.tutorials, tutorial] });
+        if (extraData.tags && generated.tags) {
+            tutorial.tags = [...new Set([...generated.tags, ...extraData.tags])];
+        }
+
+        const currentTutorials = portfolios.tutorials || [];
+        await portfolios.saveData({ type: 'tutorials', data: [...currentTutorials, tutorial] });
         return tutorial;
       } catch (error: any) {
         ui.setError(error.message);
-        user.checkAuthError(error.message) // check if token is expired
+        user.checkAuthError(error.message)
+        throw error;
+      } finally {
+        ui.setLoading(false);
+      }
+    },
+
+    async generateProjectFromTopicWithAI(request: any, extraData: any = {}) {
+      const ui = useUiStore();
+      const portfolios = usePortfoliosStore();
+      const user = useUserStore();
+      ui.setLoading(true);
+      ui.setError(null);
+      try {
+        // Gera sugestão baseada em tecnologias/nível
+        const generated = await apiGeminiService.generateProjectSuggestion(
+            request.technologies, 
+            request.level, 
+            request.persona
+        );
+
+        let imageUrl = 'https://via.placeholder.com/600x400';
+        const imagePrompt = `Capa de projeto de portfólio moderno para: ${generated.title}. Estilo minimalista, tecnológico, cores vibrantes.`;
+        
+        try {
+             const urls = await storageService.uploadMultipleImages([imagePrompt], 'projects');
+             if (urls.length > 0) {
+                 imageUrl = urls[0];
+             }
+        } catch (imgError) {
+             console.error('Falha ao gerar imagem do projeto:', imgError);
+        }
+
+        const project = {
+          id: Date.now().toString(),
+          title: generated.title,
+          description: generated.description,
+          image: imageUrl,
+          tags: generated.technologies || [],
+          category: 'Projeto de Aprendizado',
+          githubUrl: '',
+          ...extraData
+        };
+
+        if (extraData.tags && project.tags) {
+            project.tags = [...new Set([...project.tags, ...extraData.tags])];
+        }
+
+        const currentProjects = portfolios.projects || [];
+        await portfolios.saveData({ type: 'projects', data: [...currentProjects, project] });
+        return project;
+      } catch (error: any) {
+        ui.setError(error.message);
         throw error;
       } finally {
         ui.setLoading(false);
