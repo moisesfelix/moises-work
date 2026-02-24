@@ -1,22 +1,17 @@
 import { apiGeminiService } from './api.gemini.service';
 import { usePortfoliosStore } from '@/stores/portfolios';
-import { useUserStore } from '@/stores/user';
-import { AppSDK } from '@/sdk/AppSDK';
-import { getCurrentInstance } from 'vue';
 
 export interface JobAnalysisRequest {
   jobDescription: string;
   jobTitle?: string;
 }
 
-export interface JobSkills {
-  [skill: string]: number; // nível de 0 a 1
-}
+export type JobSkills = Array<{ skill: string; level: number }>;
 
 export interface GapAnalysis {
-  compatibility: number;        // 0 a 1
-  missingSkills: string[];      // habilidades totalmente ausentes
-  weakSkills: Array<{ skill: string; required: number; current: number }>; // habilidades com nível abaixo
+  compatibility: number;
+  missingSkills: string[];
+  weakSkills: Array<{ skill: string; required: number; current: number }>;
   allGapSkills: Array<{ skill: string; required: number; current: number }>;
 }
 
@@ -25,17 +20,79 @@ export interface NexusSprintResult {
   jobDescription: string;
   extractedSkills: JobSkills;
   gapAnalysis: GapAnalysis;
-  roadmap: any; // O roadmap gerado pela IA (igual ao formato atual)
+  roadmap: any;
 }
 
 class NexusSprintService {
+
+  private _getUserSkillMap(skillsFromStore: any): Record<string, number> {
+    const skillMap: Record<string, number> = {};
+    if (!skillsFromStore) return skillMap;
+
+    for (const category in skillsFromStore) {
+      if (Array.isArray(skillsFromStore[category])) {
+        for (const skill of skillsFromStore[category]) {
+          if (skill.name && typeof skill.percent === 'number') {
+            skillMap[skill.name.toLowerCase()] = skill.percent / 100;
+          }
+        }
+      }
+    }
+    return skillMap;
+  }
+
   /**
-   * Extrai habilidades técnicas de uma descrição de vaga usando IA.
+   * Normaliza uma skill para matching: remove pontuação, sufixos de versão,
+   * siglas redundantes etc.
+   * Ex.: "JavaScript ES6+" → "javascript", "REST APIs" → "rest", "Vue.js 2/3" → "vue.js"
    */
+  private _normalize(skill: string): string {
+    return skill
+      .toLowerCase()
+      .replace(/\s*(es\d+\+?|v?\d+(\.\d+)*(\s*\/\s*\d+(\.\d+)*)?)\s*/g, '') // versões: ES6+, 2/3, v3.x
+      .replace(/\bapi[s]?\b/gi, '')          // sufixo "API" ou "APIs"
+      .replace(/\btoolkit\b/gi, '')          // "Redux Toolkit" → "redux"
+      .replace(/[^a-z0-9.\s]/g, '')          // remove caracteres especiais
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  /**
+   * Verifica se uma skill da vaga faz match com alguma skill do usuário.
+   * Usa matching exato após normalização e também matching parcial (contains).
+   */
+  private _findMatchLevel(jobSkillRaw: string, userSkillMap: Record<string, number>): number {
+    const jobNorm = this._normalize(jobSkillRaw);
+
+    // 1. Match exato após normalização
+    for (const [userKey, level] of Object.entries(userSkillMap)) {
+      const userNorm = this._normalize(userKey);
+      if (jobNorm === userNorm) return level;
+    }
+
+    // 2. Match parcial: um contém o outro (evita falsos positivos com strings muito curtas)
+    for (const [userKey, level] of Object.entries(userSkillMap)) {
+      const userNorm = this._normalize(userKey);
+      if (userNorm.length < 3 || jobNorm.length < 3) continue;
+      if (jobNorm.includes(userNorm) || userNorm.includes(jobNorm)) return level;
+    }
+
+    return 0;
+  }
+
   async extractSkillsFromJob(jobDescription: string): Promise<JobSkills> {
     const prompt = `
-      Extraia as habilidades técnicas e seus níveis de proficiência exigidos pela seguinte descrição de vaga.
-      Retorne APENAS um JSON válido no formato {"skills": {"skillName": level}} onde level é um número entre 0 e 1 (0 = não exigido, 1 = expert).
+      Extraia as habilidades técnicas exigidas pela seguinte descrição de vaga.
+      
+      REGRAS IMPORTANTES:
+      - Use nomes canônicos e simples: "JavaScript" (não "JavaScript ES6+"), "Vue.js" (não "Vue.js 2/3"), "REST" (não "REST APIs")
+      - Não inclua versões nos nomes das skills
+      - Não repita a mesma skill com nomes diferentes
+      - Level entre 0 e 1 (0.7 = proficiente, 1.0 = expert/sênior)
+      
+      Retorne APENAS um JSON válido no formato:
+      {"skills": {"NomeDaSkill": level}}
+      
       Descrição da vaga:
       """
       ${jobDescription}
@@ -43,40 +100,33 @@ class NexusSprintService {
     `;
     try {
       const response = await apiGeminiService.generateText(prompt);
-      // Extrair JSON da resposta (pode vir com markdown)
       let jsonStr = response;
       const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
-      if (jsonMatch) {
-        jsonStr = jsonMatch[1];
-      } else {
-        // tentar achar um objeto JSON diretamente
+      if (jsonMatch) jsonStr = jsonMatch[1];
+      else {
         const possibleJson = response.match(/\{[\s\S]*\}/);
         if (possibleJson) jsonStr = possibleJson[0];
       }
       const parsed = JSON.parse(jsonStr);
-      return parsed.skills || {};
+      const skillsObject = parsed.skills || {};
+      return Object.entries(skillsObject).map(([skill, level]) => ({
+        skill,
+        level: level as number,
+      }));
     } catch (error) {
       console.error('Erro ao extrair skills da vaga:', error);
       throw new Error('Não foi possível extrair as habilidades da vaga. Tente novamente.');
     }
   }
 
-  /**
-   * Calcula a compatibilidade entre as skills do usuário e as exigidas pela vaga.
-   */
-  calculateGap(userSkills: string[], jobSkills: JobSkills): GapAnalysis {
-    const userSkillMap: Record<string, number> = {};
-    // Assumimos que todas as skills que o usuário declarou têm nível 1 (domina)
-    userSkills.forEach(skill => {
-      userSkillMap[skill.toLowerCase()] = 1.0;
-    });
-
+  calculateGap(userSkillMap: Record<string, number>, jobSkills: JobSkills): GapAnalysis {
     const gapSkills: Array<{ skill: string; required: number; current: number }> = [];
     let totalRequired = 0;
     let totalMatch = 0;
 
-    for (const [skill, required] of Object.entries(jobSkills)) {
-      const current = userSkillMap[skill.toLowerCase()] || 0;
+    for (const { skill, level: required } of jobSkills) {
+      // Usa matching inteligente em vez de lookup direto
+      const current = this._findMatchLevel(skill, userSkillMap);
       const match = Math.min(current, required);
       totalRequired += required;
       totalMatch += match;
@@ -97,18 +147,16 @@ class NexusSprintService {
     };
   }
 
-  /**
-   * Gera um roadmap (Nexus Sprint) para preencher as lacunas identificadas.
-   */
   async generateSprintRoadmap(
     jobTitle: string,
     jobDescription: string,
     gapAnalysis: GapAnalysis,
     userSkills: string[]
   ): Promise<any> {
-    // Construir um prompt focado nas habilidades que faltam
     const missingList = gapAnalysis.missingSkills.join(', ');
-    const weakList = gapAnalysis.weakSkills.map(w => `${w.skill} (atual ${w.current*100}%, necessário ${w.required*100}%)`).join(', ');
+    const weakList = gapAnalysis.weakSkills
+      .map(w => `${w.skill} (atual: ${(w.current * 100).toFixed(0)}%, necessário: ${(w.required * 100).toFixed(0)}%)`)
+      .join(', ');
 
     const goal = `Preencher as lacunas para a vaga "${jobTitle}"`;
     const context = `
@@ -118,40 +166,29 @@ class NexusSprintService {
       Descrição completa da vaga: ${jobDescription}
     `;
 
-    // Reutiliza o método generateRoadmap existente, passando um objeto com goal e skills
-    const request = {
+    return await apiGeminiService.generateRoadmap({
       goal,
       currentRole: 'Desenvolvedor',
-      months: 3, // Podemos deixar fixo ou parametrizar
+      months: 3,
       skills: userSkills,
-      context, // Será usado no prompt
-    };
-
-    // O método generateRoadmap já espera receber skills no request
-    const roadmap = await apiGeminiService.generateRoadmap(request);
-    return roadmap;
+      context,
+    });
   }
 
-  /**
-   * Método principal que orquestra todo o fluxo.
-   */
   async analyzeJobAndCreateSprint(request: JobAnalysisRequest): Promise<NexusSprintResult> {
     const { jobDescription, jobTitle = 'Vaga analisada' } = request;
 
-    // 1. Extrair skills da vaga
     const extractedSkills = await this.extractSkillsFromJob(jobDescription);
 
-    // 2. Obter skills do usuário (da store)
     const portfoliosStore = usePortfoliosStore();
-    const userSkills = portfoliosStore.userSkills || [];
+    const userSkillMap = this._getUserSkillMap(portfoliosStore.skills);
 
-    // 3. Calcular gap
-    const gapAnalysis = this.calculateGap(userSkills, extractedSkills);
+    const gapAnalysis = this.calculateGap(userSkillMap, extractedSkills);
 
-    // 4. Gerar roadmap (se houver gap)
     let roadmap = null;
     if (gapAnalysis.allGapSkills.length > 0) {
-      roadmap = await this.generateSprintRoadmap(jobTitle, jobDescription, gapAnalysis, userSkills);
+      const userSkillNames = Object.keys(userSkillMap);
+      roadmap = await this.generateSprintRoadmap(jobTitle, jobDescription, gapAnalysis, userSkillNames);
     }
 
     return {

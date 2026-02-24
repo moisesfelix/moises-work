@@ -30,6 +30,10 @@ import AdminAbout from '@/views/admin/about/About.vue';
 import AdminContact from '@/views/admin/contact/Contact.vue';
 import AdminRoadmap from '@/views/admin/roadmap/Roadmap.vue';
 import AdminCredits from '@/views/admin/credits/Credits.vue'; // NOVA
+import NexusSprint from '@/views/admin/nexus-sprint/NexusSprint.vue';
+import AnalysisList from '@/views/admin/nexus-sprint/AnalysisList.vue';
+import AnalysisDetails from '@/views/admin/nexus-sprint/AnalysisDetails.vue';
+
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -117,16 +121,28 @@ const routes: Array<RouteRecordRaw> = [
       },
       {
         path: 'credits',
+        name: 'AdminCredits',
+        component: () => import('@/views/admin/credits/Credits.vue'),
+        meta: { title: 'Créditos & Planos' }
+      },
       {
         path: 'nexus-sprint',
         name: 'AdminNexusSprint',
-        component: () => import(@/views/admin/nexus-sprint/NexusSprint.vue),
+        component: NexusSprint,
         meta: { title: 'Nexus Sprint' }
       },
-        name: 'AdminCredits',
-        component: AdminCredits,
-        meta: { title: 'Créditos & Planos' }
-      }
+      {
+        path: 'nexus-sprint/list',
+        name: 'AdminNexusSprintList',
+        component: AnalysisList,
+        meta: { title: 'Nexus Sprint Analyses' }
+      },
+      {
+        path: 'nexus-sprint/:id',
+        name: 'AdminNexusSprintDetails',
+        component: AnalysisDetails,
+        meta: { title: 'Nexus Sprint Analysis Details' }
+      },
     ]
   },
   // Portfolio Routes (Dynamic Slug)

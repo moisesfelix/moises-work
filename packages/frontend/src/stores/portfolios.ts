@@ -5,6 +5,7 @@ import { ref, get, set, push, update, serverTimestamp } from 'firebase/database'
 import { kebabCase } from '@/utils/slug';
 import { useUiStore }   from './ui';
 import { useAuthStore } from './auth';
+import type { NexusSprintResult } from '@/services/nexus-sprint.service';
 
 export interface Roadmap {
   id: string;
@@ -17,10 +18,10 @@ export interface Roadmap {
     topics: string[];
     learningObjectives?: string[];
     projectSuggestion?: string;
-    prerequisites?: string[]; // Habilidades externas necessárias
+    prerequisites?: string[];
     estimatedHours: number;
     dependsOn?: string[];
-    completed?: boolean;      // marcado pelo usuário
+    completed?: boolean;
     completedAt?: string;
     generatedArticleId?: string;
     generatedTutorialId?: string;
@@ -48,61 +49,80 @@ export interface SoftSkills {
   lastAnalyzed?: string;
 }
 
+// Formato do skills no portfólio: { "Frontend": [{ name: "Vue.js", percent: 80 }], ... }
+export type SkillsMap = Record<string, Array<{ name: string; percent: number }>>;
+
 interface PortfolioState {
-  projects:          Project[];
-  articles:          Article[];
-  tutorials:         Tutorial[];
-  skills:            any;
-  experiences:       Experience[];
-  about:             any;
-  contact:           any;
-  activePortfolioId: string | null;
+  projects:           Project[];
+  articles:           Article[];
+  tutorials:          Tutorial[];
+  skills:             SkillsMap;
+  experiences:        Experience[];
+  about:              any;
+  contact:            any;
+  activePortfolioId:  string | null;
   activePortfolioSlug: string | null;
-  roadmap:           Roadmap | null;           // (Legado - manter por compatibilidade breve)
-  roadmaps:          Roadmap[];                // Lista de todos os objetivos
-  currentRoadmapId:  string | null;            // ID do roadmap sendo visualizado
-  softSkills:        SoftSkills | null;        // soft skills analisadas
-  userSkills:        string[];                 // Lista simples de tags/skills que o usuário possui
+  roadmap:            Roadmap | null;
+  roadmaps:           Roadmap[];
+  currentRoadmapId:   string | null;
+  softSkills:         SoftSkills | null;
+  nexusSprints:       NexusSprintResult[];
+  currentNexusSprint: NexusSprintResult | null;
+  dataLoaded:         boolean;
 }
 
 export const usePortfoliosStore = defineStore('portfolios', {
   state: (): PortfolioState => ({
-    projects:          [],
-    articles:          [],
-    tutorials:         [],
-    skills:            {},
-    experiences:       [],
-    about:             null,
-    contact:           null,
-    activePortfolioId: null,
+    projects:           [],
+    articles:           [],
+    tutorials:          [],
+    skills:             {},
+    experiences:        [],
+    about:              null,
+    contact:            null,
+    activePortfolioId:  null,
     activePortfolioSlug: null,
-    roadmap:           null,
-    roadmaps:          [],
-    currentRoadmapId:  null,
-    softSkills:        null,
-    userSkills:        [], // Ex: ['git', 'javascript', 'vue']
+    roadmap:            null,
+    roadmaps:           [],
+    currentRoadmapId:   null,
+    softSkills:         null,
+    nexusSprints:       [],
+    currentNexusSprint: null,
+    dataLoaded:         false,
   }),
 
   getters: {
-    // Retorna o roadmap atual baseado no ID selecionado ou o primeiro da lista
+    /**
+     * Lista flat de nomes de skills derivada do objeto skills por categoria.
+     * Ex.: { Frontend: [{ name: 'Vue.js', percent: 80 }] } → ['Vue.js']
+     */
+    userSkills: (state): string[] => {
+      return Object.values(state.skills)
+        .flat()
+        .map((s: any) => s.name)
+        .filter(Boolean);
+    },
+
     currentRoadmap: (state) => {
       if (state.currentRoadmapId) {
         return state.roadmaps.find(r => r.id === state.currentRoadmapId) || state.roadmap;
       }
       return state.roadmap || (state.roadmaps.length > 0 ? state.roadmaps[0] : null);
     },
+
     getArticleBySlug:  (state) => (slug: string) => state.articles.find((a: any) => a.slug === slug),
     getTutorialBySlug: (state) => (slug: string) => state.tutorials.find((t: any) => t.slug === slug),
     getLatestArticles: (state) => (limit = 3) =>
       [...state.articles]
         .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .slice(0, limit),
-    completedSteps:    (state) => state.roadmap?.steps.filter(s => s.completed) || [],
-    progressPercent:   (state) => {
+
+    completedSteps: (state) => state.roadmap?.steps.filter(s => s.completed) || [],
+    progressPercent: (state) => {
       if (!state.roadmap?.steps.length) return 0;
       const completed = state.roadmap.steps.filter(s => s.completed).length;
       return Math.round((completed / state.roadmap.steps.length) * 100);
-    }
+    },
   },
 
   actions: {
@@ -110,12 +130,14 @@ export const usePortfoliosStore = defineStore('portfolios', {
       this.projects    = payload.projects    || [];
       this.articles    = payload.articles    || [];
       this.tutorials   = payload.tutorials   || [];
-      this.skills      = payload.skills      || {};
+      this.skills      = payload.skills      || {};   // SkillsMap — fonte da verdade
       this.experiences = payload.experiences || [];
       this.about       = payload.about       || null;
       this.contact     = payload.contact     || null;
       this.roadmap     = payload.roadmap     || null;
-      // Compatibilidade: Se vier roadmaps (lista), usa. Se vier só roadmap (objeto), põe na lista.
+      this.nexusSprints = payload.nexusSprints || [];
+      this.softSkills  = payload.softSkills  || null;
+
       if (payload.roadmaps && Array.isArray(payload.roadmaps)) {
         this.roadmaps = payload.roadmaps;
       } else if (payload.roadmap) {
@@ -123,9 +145,8 @@ export const usePortfoliosStore = defineStore('portfolios', {
       } else {
         this.roadmaps = [];
       }
-      
-      this.userSkills  = payload.userSkills  || [];
-      this.softSkills  = payload.softSkills  || null;
+
+      this.dataLoaded = true;
     },
 
     async initializeUserPortfolio() {
@@ -133,50 +154,45 @@ export const usePortfoliosStore = defineStore('portfolios', {
       const auth = useAuthStore();
       const uid  = auth.user?.uid;
       if (!uid) return;
-
       ui.setLoading(true);
       try {
         const snap = await get(ref(db, `users/${uid}/portfolios`));
-
         let portfolioId: string | null = null;
         let isNew = false;
         let uniqueSlug = '';
 
         if (snap.exists()) {
           portfolioId = Object.keys(snap.val())[0];
-          // Recupera o slug se já existir
           const metaSnap = await get(ref(db, `portfolios_meta/${portfolioId}`));
           if (metaSnap.exists()) {
-              uniqueSlug = metaSnap.val().slug;
+            uniqueSlug = metaSnap.val().slug;
           }
         } else {
-          // Criação inicial
           isNew       = true;
           portfolioId = push(ref(db, 'portfolios_meta')).key!;
-          const title     = auth.user?.displayName || 'Meu Portfólio';
-          const slugBase  = kebabCase(title);
+          const title    = auth.user?.displayName || 'Meu Portfólio';
+          const slugBase = kebabCase(title);
           uniqueSlug = `${slugBase}-${portfolioId.substring(portfolioId.length - 4)}`;
 
           const updates: Record<string, any> = {};
           updates[`/portfolios_meta/${portfolioId}`]    = { title, slug: uniqueSlug, ownerUid: uid, thumbnail: '', createdAt: serverTimestamp() };
-          updates[`/portfolios_content/${portfolioId}`] = { about: { title: `Olá, sou ${title}`, description: 'Portfólio gerado automaticamente.' }, contact: { email: auth.user?.email }, projects: [], articles: [], skills: {}, experiences: [], roadmap: null, softSkills: null };
+          updates[`/portfolios_content/${portfolioId}`] = { about: { title: `Olá, sou ${title}`, description: 'Portfólio gerado automaticamente.' }, contact: { email: auth.user?.email }, projects: [], articles: [], skills: {}, experiences: [], roadmap: null, softSkills: null, nexusSprints: [] };
           updates[`/users/${uid}/portfolios/${portfolioId}`] = true;
           updates[`/slugs/${uniqueSlug}`] = portfolioId;
-          
+
           await update(ref(db), updates);
         }
 
-        this.activePortfolioId = portfolioId;
+        this.activePortfolioId   = portfolioId;
         this.activePortfolioSlug = uniqueSlug;
-        
-        // Armazena o slug do usuário no localStorage para acesso rápido no Header
+
         if (uniqueSlug) {
-            localStorage.setItem('userSlug', uniqueSlug);
+          localStorage.setItem('userSlug', uniqueSlug);
         }
 
         const contentSnap = await get(ref(db, `portfolios_content/${portfolioId}`));
         if (contentSnap.exists()) {
-             this.setPortfolioData(contentSnap.val());
+          this.setPortfolioData(contentSnap.val());
         }
 
         return { isNew, portfolioId, slug: uniqueSlug };
@@ -197,7 +213,6 @@ export const usePortfoliosStore = defineStore('portfolios', {
 
         const slugSnap = await get(ref(db, `slugs/${targetId}`));
         const actualId = slugSnap.exists() ? slugSnap.val() : targetId;
-
         if (slugSnap.exists()) {
           this.activePortfolioSlug = targetId as string;
         }
@@ -276,44 +291,57 @@ export const usePortfoliosStore = defineStore('portfolios', {
       }
     },
 
-    // NOVAS AÇÕES PARA ROADMAP
+    /**
+     * Adiciona uma skill ao portfólio na categoria "Other" caso ela não exista.
+     * A fonte da verdade é skills (SkillsMap), não userSkills.
+     */
+    async addUserSkill(skillName: string, category = 'Other', percent = 50) {
+      if (!this.activePortfolioId) return;
+
+      // Verifica se já existe em qualquer categoria
+      const alreadyExists = Object.values(this.skills)
+        .flat()
+        .some((s: any) => s.name.toLowerCase() === skillName.toLowerCase());
+
+      if (alreadyExists) return;
+
+      const updatedSkills: SkillsMap = { ...this.skills };
+      if (!updatedSkills[category]) {
+        updatedSkills[category] = [];
+      }
+      updatedSkills[category] = [...updatedSkills[category], { name: skillName, percent }];
+      this.skills = updatedSkills;
+
+      await set(ref(db, `portfolios_content/${this.activePortfolioId}/skills`), updatedSkills);
+    },
+
     async saveRoadmap(roadmap: Roadmap) {
       if (!this.activePortfolioId) throw new Error('Nenhum portfólio ativo.');
       const ui = useUiStore();
       ui.setLoading(true);
-      
       try {
         const cleanSteps = roadmap.steps.map(step => {
-           const s: any = { ...step };
-           Object.keys(s).forEach(key => s[key] === undefined && delete s[key]);
-           return s;
+          const s: any = { ...step };
+          Object.keys(s).forEach(key => s[key] === undefined && delete s[key]);
+          return s;
         });
+        const updatedRoadmap = { ...roadmap, steps: cleanSteps, updatedAt: new Date().toISOString() };
 
-        const updatedRoadmap = { 
-           ...roadmap, 
-           steps: cleanSteps,
-           updatedAt: new Date().toISOString() 
-        };
-        
-        // Atualiza a lista local
         const index = this.roadmaps.findIndex(r => r.id === roadmap.id);
         if (index !== -1) {
           this.roadmaps[index] = updatedRoadmap;
         } else {
           this.roadmaps.push(updatedRoadmap);
         }
-        
-        // Define como atual se for novo
+
         if (!this.currentRoadmapId) {
           this.currentRoadmapId = updatedRoadmap.id;
         }
 
-        // Salva a lista completa e o roadmap legado para compatibilidade
         await update(ref(db, `portfolios_content/${this.activePortfolioId}`), {
           roadmaps: this.roadmaps,
-          roadmap: updatedRoadmap // Mantém o último modificado como 'principal' legado por enquanto
+          roadmap: updatedRoadmap,
         });
-
         this.roadmap = updatedRoadmap;
       } catch (error: any) {
         ui.setError(error.message);
@@ -323,49 +351,56 @@ export const usePortfoliosStore = defineStore('portfolios', {
       }
     },
 
-    async addUserSkill(skill: string) {
-      if (!this.activePortfolioId) return;
-      if (this.userSkills.includes(skill)) return;
-      
-      const newSkills = [...this.userSkills, skill];
-      this.userSkills = newSkills;
-      
-      await update(ref(db, `portfolios_content/${this.activePortfolioId}`), {
-        userSkills: newSkills
-      });
-    },
-
-    async updateStepCompletion(stepId: string, completed: boolean, meta: { articleId?: string; tutorialId?: string; projectId?: string; quizResult?: any } = {}) {
+    async updateStepCompletion(
+      stepId: string,
+      completed: boolean,
+      meta: { articleId?: string; tutorialId?: string; projectId?: string; quizResult?: any } = {}
+    ) {
       const current = this.currentRoadmap;
       if (!current) return;
-      
-      const steps = current.steps.map(step => {
-        if (step.id === stepId) {
-          const updatedStep = { ...step };
-          updatedStep.completed = completed;
-          
-          if (completed) {
-             updatedStep.completedAt = new Date().toISOString();
-          } else {
-             delete updatedStep.completedAt;
-          }
 
-          if (meta.articleId) updatedStep.generatedArticleId = meta.articleId;
-          if (meta.tutorialId) updatedStep.generatedTutorialId = meta.tutorialId;
-          if (meta.projectId) updatedStep.generatedProjectId = meta.projectId;
-          if (meta.quizResult) updatedStep.quiz = meta.quizResult;
-          
-          return updatedStep;
+      const steps = current.steps.map(step => {
+        if (step.id !== stepId) return step;
+        const updatedStep = { ...step, completed };
+        if (completed) {
+          updatedStep.completedAt = new Date().toISOString();
+        } else {
+          delete updatedStep.completedAt;
         }
-        return step;
+        if (meta.articleId)  updatedStep.generatedArticleId  = meta.articleId;
+        if (meta.tutorialId) updatedStep.generatedTutorialId = meta.tutorialId;
+        if (meta.projectId)  updatedStep.generatedProjectId  = meta.projectId;
+        if (meta.quizResult) updatedStep.quiz                = meta.quizResult;
+        return updatedStep;
       });
-      
-      const updatedRoadmap = { ...current, steps };
-      await this.saveRoadmap(updatedRoadmap);
+
+      await this.saveRoadmap({ ...current, steps });
     },
 
     setCurrentRoadmapId(id: string) {
       this.currentRoadmapId = id;
+    },
+
+    setCurrentNexusSprint(sprint: NexusSprintResult | null) {
+      this.currentNexusSprint = sprint;
+    },
+
+    async saveNexusSprint(sprint: NexusSprintResult): Promise<string> {
+      if (!this.activePortfolioId) throw new Error('Nenhum portfólio ativo.');
+      const ui = useUiStore();
+      ui.setLoading(true);
+      try {
+        const newSprint = { ...sprint, id: Date.now().toString(), createdAt: new Date().toISOString() };
+        const updatedSprints = [...this.nexusSprints, newSprint];
+        await this.saveData({ type: 'nexusSprints', data: updatedSprints });
+        this.nexusSprints = updatedSprints;
+        return newSprint.id;
+      } catch (error: any) {
+        ui.setError(error.message);
+        throw error;
+      } finally {
+        ui.setLoading(false);
+      }
     },
 
     async saveSoftSkills(analysis: any) {
