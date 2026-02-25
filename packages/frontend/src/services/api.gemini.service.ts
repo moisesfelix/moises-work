@@ -234,6 +234,48 @@ class ApiGeminiService {
   async analyzeSkills(request: SkillsAnalysisRequest): Promise<any> {
     return this.post<any>('/v1/gemini/analyze-skills', request);
   }
+  
+  async generateSocialPost(request: { 
+    title: string, 
+    description: string, 
+    type: string, 
+    network: string, 
+    tone: string, 
+    goal: string,
+    url: string
+  }): Promise<{ text: string }> {
+    const prompt = `Atue como um Especialista em Social Media e Copywriting.
+    
+    Tarefa: Crie UM post otimizado para a rede social "${request.network}".
+    
+    Conteúdo a Divulgar:
+    - Tipo: ${request.type}
+    - Título: "${request.title}"
+    - Resumo/Descrição: "${request.description}"
+    - Link Final: ${request.url}
+    
+    Configurações da Copy:
+    - Tom de Voz: ${request.tone} (ex: profissional, urgente, amigável)
+    - Objetivo: ${request.goal} (ex: vender, gerar clique, comentar)
+    
+    Regras Específicas para ${request.network}:
+    ${this.getNetworkRules(request.network)}
+    
+    Saída: Apenas o texto do post, pronto para copiar e colar.`;
+
+    return this.post<{ text: string }>('/v1/gemini/generate-text', { prompt });
+  }
+
+  private getNetworkRules(network: string): string {
+    const rules: Record<string, string> = {
+        'LinkedIn': '- Use parágrafos curtos.\n- Use 3-5 hashtags relevantes no final.\n- Foco em aprendizado profissional e carreira.\n- Não use muitos emojis, seja sóbrio.',
+        'WhatsApp': '- Use formatação *negrito* para destaque.\n- Seja direto e curto.\n- Use emojis para quebrar o texto.\n- Termine com uma chamada clara para clicar no link.',
+        'Twitter': '- Máximo de 280 caracteres.\n- Use threads se necessário (mas aqui gere apenas o primeiro tweet chamativo).\n- Use 1-2 hashtags.\n- Gere curiosidade.',
+        'Instagram': '- Comece com uma "Headline" chamativa (Título).\n- Use emojis.\n- Texto mais visual e inspirador.\n- Hashtags no final (bloco de 5-10).',
+        'Facebook': '- Tom comunitário e amigável.\n- Pode ser um texto médio.\n- Incentive o compartilhamento.'
+    };
+    return rules[network] || '- Seja claro e persuasivo.';
+  }
 
   async generateStepQuiz(topic: string, difficulty: string, persona?: string): Promise<any> {
     // Como o endpoint específico pode não existir no backend ainda, vamos usar o generate-text com um prompt estruturado

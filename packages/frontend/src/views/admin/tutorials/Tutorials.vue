@@ -56,6 +56,13 @@
                 <span class="status-dot active"></span> Publicado
               </td>
               <td class="actions-cell">
+                <button @click="openShareModal(tutorial)" class="btn-icon share" title="Compartilhar">
+                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                      <polyline points="16 6 12 2 8 6" />
+                      <line x1="12" y1="2" x2="12" y2="15" />
+                   </svg>
+                </button>
                 <button @click="openEditTutorialDialog(tutorial)" class="btn-icon edit" title="Editar">
                   <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -231,16 +238,29 @@
         </div>
       </div>
     </transition>
+
+    <ShareModal 
+      v-if="showShareModal"
+      :is-open="showShareModal"
+      :item="sharingTutorial"
+      type="tutorial"
+      @close="closeShareModal"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, inject } from "vue";
 import { usePortfoliosStore } from "@/stores/portfolios";
 import { useUiStore }         from "@/stores/ui";
 import { useAiStore }         from "@/stores/ai";
 import { storageService }     from "@/services/storage.service";
 import { v4 as uuidv4 }       from "uuid";
+import ShareModal from "@/components/ShareModal.vue";
+
+// Adicionar inject do SDK se necessário no futuro
+// import { AppSDK } from "@/sdk/AppSDK";
+// const sdk = inject('sdk') as AppSDK;
 
 const portfoliosStore   = usePortfoliosStore();
 const uiStore           = useUiStore();
@@ -249,7 +269,9 @@ const tutorials         = computed(() => portfoliosStore.tutorials || []);
 const loading           = computed(() => uiStore.isLoading);
 const showAIModal       = ref(false);
 const showTutorialDialog = ref(false);
+const showShareModal     = ref(false);
 const editingTutorial   = ref<any>(null);
+const sharingTutorial   = ref<any>(null);
 const generating        = ref(false);
 const generatingStatus  = ref("");
 const isUploading       = ref(false);
@@ -279,6 +301,9 @@ const removeImage = () => { tutorialForm.value.image = ""; };
 
 const openAIModal  = () => { aiForm.value = { topic: "", category: "", difficulty: "Iniciante", duration: "" }; showAIModal.value = true; };
 const closeAIModal = () => { if (!generating.value) showAIModal.value = false; };
+
+const openShareModal = (tutorial: any) => { sharingTutorial.value = tutorial; showShareModal.value = true; };
+const closeShareModal = () => { showShareModal.value = false; sharingTutorial.value = null; };
 
 const generateTutorial = async () => {
   generating.value = true; generatingStatus.value = "Planejando conteúdo...";
@@ -525,6 +550,11 @@ const handleDeleteTutorial = async (tutorial: any) => {
 .btn-icon.delete {
   color: #e74c3c;
   background-color: #fce8e6;
+}
+
+.btn-icon.share {
+  color: #2ecc71;
+  background-color: #eafaf1;
 }
 
 /* =========================================

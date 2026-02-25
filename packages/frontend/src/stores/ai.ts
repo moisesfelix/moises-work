@@ -289,5 +289,28 @@ export const useAiStore = defineStore('ai', {
         ui.setLoading(false);
       }
     },
+    
+    // NOVO: generateSocialPost
+    async generateSocialPost(request: { 
+        title: string, 
+        description: string, 
+        type: string, 
+        network: string, 
+        tone: string, 
+        goal: string,
+        url: string
+    }) {
+      const ui = useUiStore();
+      ui.setLoading(true);
+      try {
+        const generated = await apiGeminiService.generateSocialPost(request);
+        return generated.text;
+      } catch (error: any) {
+        ui.setError(error.message);
+        throw error;
+      } finally {
+        ui.setLoading(false);
+      }
+    },
   },
 });

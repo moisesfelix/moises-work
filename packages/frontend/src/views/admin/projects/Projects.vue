@@ -39,6 +39,13 @@
               </td>
               <td class="text-muted">{{ truncateText(project.description, 60) }}</td>
               <td class="actions-cell">
+                <button @click="openShareModal(project)" class="btn-icon share" title="Compartilhar">
+                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                      <polyline points="16 6 12 2 8 6" />
+                      <line x1="12" y1="2" x2="12" y2="15" />
+                   </svg>
+                </button>
                 <button @click="openEditProjectDialog(project)" class="btn-icon edit" title="Editar">
                   Editar
                 </button>
@@ -184,6 +191,14 @@
         </div>
       </div>
     </transition>
+
+    <ShareModal 
+      v-if="showShareModal"
+      :is-open="showShareModal"
+      :item="sharingProject"
+      type="project"
+      @close="closeShareModal"
+    />
   </div>
 </template>
 
@@ -196,6 +211,7 @@ import { GitHubRepoSDK, GithubUtils } from "@/sdk/GitHubSDK";
 import { AppSDK } from "@/sdk/AppSDK";
 import { useAuthStore } from "@/stores/auth";
 import { useUserStore } from "@/stores/user";
+import ShareModal from "@/components/ShareModal.vue";
 
 const sdk = inject('sdk') as AppSDK;
 const authStore = useAuthStore();
@@ -204,7 +220,9 @@ const portfoliosStore  = usePortfoliosStore();
 const projects         = computed(() => portfoliosStore.projects);
 const showProjectDialog = ref(false);
 const showAIModal      = ref(false);
+const showShareModal   = ref(false);
 const editingProject   = ref<any>(null);
+const sharingProject   = ref<any>(null);
 const isUploading      = ref(false);
 const isProcessingGithub = ref(false);
 const uploadError      = ref<string | null>(null);
@@ -221,6 +239,9 @@ const projectForm = ref({
 onMounted(() => portfoliosStore.fetchPortfolioData());
 
 const truncateText = (text: string, length: number) => !text ? "" : text.length > length ? text.substring(0, length) + "..." : text;
+
+const openShareModal = (project: any) => { sharingProject.value = project; showShareModal.value = true; };
+const closeShareModal = () => { showShareModal.value = false; sharingProject.value = null; };
 
 const handleImageUpload = async (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0];
@@ -521,6 +542,11 @@ const deleteProject = async (project: any) => {
 .btn-icon.delete {
   color: #e74c3c;
   background-color: #fce8e6;
+}
+
+.btn-icon.share {
+  color: #2ecc71;
+  background-color: #eafaf1;
 }
 
 /* Upload Area Styles (NOVO) */

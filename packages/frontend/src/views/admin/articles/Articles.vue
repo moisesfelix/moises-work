@@ -49,6 +49,13 @@
               </td>
               <td class="text-muted">{{ truncateText(article.description || article.excerpt, 60) }}</td>
               <td class="actions-cell">
+                <button @click="openShareModal(article)" class="btn-icon share" title="Compartilhar">
+                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                      <polyline points="16 6 12 2 8 6" />
+                      <line x1="12" y1="2" x2="12" y2="15" />
+                   </svg>
+                </button>
                 <button @click="openEditArticleDialog(article)" class="btn-icon edit" title="Editar">
                   <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -214,6 +221,14 @@
         </div>
       </div>
     </transition>
+
+    <ShareModal 
+      v-if="showShareModal"
+      :is-open="showShareModal"
+      :item="sharingArticle"
+      type="article"
+      @close="closeShareModal"
+    />
   </div>
 </template>
 
@@ -226,6 +241,7 @@ import { useUserStore }       from "@/stores/user";
 import { storageService }     from "@/services/storage.service";
 import { v4 as uuidv4 }       from "uuid";
 import { AppSDK } from "@/sdk/AppSDK";
+import ShareModal from "@/components/ShareModal.vue";
 
 const sdk = inject('sdk') as AppSDK;
 const portfoliosStore    = usePortfoliosStore();
@@ -236,7 +252,9 @@ const articles           = computed(() => portfoliosStore.articles || []);
 const loading            = computed(() => uiStore.isLoading);
 const showAIModal        = ref(false);
 const showArticleDialog  = ref(false);
+const showShareModal     = ref(false);
 const editingArticle     = ref<any>(null);
+const sharingArticle     = ref<any>(null);
 const generating         = ref(false);
 const generatingStatus   = ref("");
 const isUploading        = ref(false);
@@ -268,6 +286,9 @@ const truncateText = (text: string, length: number) => !text ? "" : text.length 
 
 const openAIModal  = () => { aiForm.value = { topic: "", category: "", length: "medium", tone: "profissional" }; showAIModal.value = true; };
 const closeAIModal = () => { if (!generating.value) showAIModal.value = false; };
+
+const openShareModal = (article: any) => { sharingArticle.value = article; showShareModal.value = true; };
+const closeShareModal = () => { showShareModal.value = false; sharingArticle.value = null; };
 
 const generateArticle = async () => {
   const cost = sdk.credits.getCost('generate_article');
@@ -543,6 +564,11 @@ const handleDeleteArticle = async (article: any) => {
 .btn-icon.delete {
   color: #e74c3c;
   background-color: #fce8e6;
+}
+
+.btn-icon.share {
+  color: #2ecc71;
+  background-color: #eafaf1;
 }
 
 /* =========================================

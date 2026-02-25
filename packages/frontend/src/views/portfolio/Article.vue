@@ -90,8 +90,20 @@ const shareArticle = async () => {
   const isDev    = window.location.hostname === "localhost";
   const apiBase  = isDev
     ? "http://127.0.0.1:5001/moises-work-app/us-central1/link"
-    : `${window.location.origin}/share`;
-  const shareUrl = `${apiBase}/${currentPortfolioId.value}/article/${(article.value as any).slug}`;
+    : `${window.location.origin}/share`; // Ou a URL direta da Cloud Function se preferir
+    
+  // Tenta recuperar shareMessageId da URL atual (se veio de um link compartilhado)
+  const incomingShareId = route.query.shareMessageId;
+  const shareSource = route.query.utm_source || 'organic';
+  
+  let shareUrl = `${apiBase}/${currentPortfolioId.value}/article/${(article.value as any).slug}`;
+  
+  // Anexa o ID se existir, ou cria um novo "organic" se quiser rastrear virais
+  if (incomingShareId) {
+      shareUrl += `?shareMessageId=${incomingShareId}&utm_source=${shareSource}`;
+  } else {
+      shareUrl += `?utm_source=organic_share`;
+  }
 
   if (navigator.share) {
     try { await navigator.share({ title: (article.value as any).title, text: (article.value as any).description || (article.value as any).excerpt, url: shareUrl }); }
