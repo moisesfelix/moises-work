@@ -62,6 +62,7 @@ interface PortfolioState {
   contact:            any;
   activePortfolioId:  string | null;
   activePortfolioSlug: string | null;
+  userPortfolioSlug:  string | null;
   roadmap:            Roadmap | null;
   roadmaps:           Roadmap[];
   currentRoadmapId:   string | null;
@@ -82,6 +83,7 @@ export const usePortfoliosStore = defineStore('portfolios', {
     contact:            null,
     activePortfolioId:  null,
     activePortfolioSlug: null,
+    userPortfolioSlug:  null,
     roadmap:            null,
     roadmaps:           [],
     currentRoadmapId:   null,
@@ -149,7 +151,7 @@ export const usePortfoliosStore = defineStore('portfolios', {
       this.dataLoaded = true;
     },
 
-    async initializeUserPortfolio() {
+    async initializeUserPortfolio(setActive: boolean = true) {
       const ui   = useUiStore();
       const auth = useAuthStore();
       const uid  = auth.user?.uid;
@@ -183,16 +185,19 @@ export const usePortfoliosStore = defineStore('portfolios', {
           await update(ref(db), updates);
         }
 
-        this.activePortfolioId   = portfolioId;
-        this.activePortfolioSlug = uniqueSlug;
-
         if (uniqueSlug) {
+          this.userPortfolioSlug = uniqueSlug;
           localStorage.setItem('userSlug', uniqueSlug);
         }
 
-        const contentSnap = await get(ref(db, `portfolios_content/${portfolioId}`));
-        if (contentSnap.exists()) {
-          this.setPortfolioData(contentSnap.val());
+        if (setActive) {
+          this.activePortfolioId   = portfolioId;
+          this.activePortfolioSlug = uniqueSlug;
+
+          const contentSnap = await get(ref(db, `portfolios_content/${portfolioId}`));
+          if (contentSnap.exists()) {
+            this.setPortfolioData(contentSnap.val());
+          }
         }
 
         return { isNew, portfolioId, slug: uniqueSlug };

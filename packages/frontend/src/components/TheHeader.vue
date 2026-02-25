@@ -90,7 +90,7 @@ const userStore           = useUserStore();
 const slug           = computed(() => route.params.slug as string);
 // Tenta obter o slug do usuário logado (pode estar na store ou no localStorage)
 // Assumindo que o userStore ou portfoliosStore tenha essa info, senão pegamos de portfoliosStore.about?.slug se for o dono
-const userSlug       = computed(() => portfoliosStore.about?.slug || localStorage.getItem('userSlug')); 
+const userSlug       = computed(() => portfoliosStore.userPortfolioSlug || localStorage.getItem('userSlug')); 
 
 const portfolioTitle = computed(() => portfoliosStore.about?.title || "Meu Portfólio");
 const mobileMenuIcon = computed(() => (mobileMenuActive.value ? "fas fa-times" : "fas fa-bars"));

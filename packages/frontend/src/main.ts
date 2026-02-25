@@ -40,7 +40,9 @@ onAuthStateChanged(getAuth(), async (user) => {
     // Verifica se entrou via link de indicação e registra se necessário
     await sdk.referral.checkUrlAndRegister(user.uid, user.displayName || 'Usuário');
     
-    await portfoliosStore.initializeUserPortfolio();
+    const path = window.location.pathname;
+    const isPublicPortfolio = path !== '/' && path !== '/login' && !path.startsWith('/admin');
+    await portfoliosStore.initializeUserPortfolio(!isPublicPortfolio);
   } else {
     authStore.clearUser();
     userStore.stopListening();

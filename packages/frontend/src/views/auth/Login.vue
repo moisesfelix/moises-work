@@ -27,7 +27,7 @@ export default defineComponent({
     const handleGoogleLogin = async () => {
       try {
         await authStore.loginWithGoogle();
-        const result   = await portfoliosStore.initializeUserPortfolio();
+        const result   = await portfoliosStore.initializeUserPortfolio(true);
         let redirect   = (route.query?.redirectedFrom as string) || "/admin/dashboard";
         if (result?.isNew) redirect = "/admin/about";
         router.push(redirect);
