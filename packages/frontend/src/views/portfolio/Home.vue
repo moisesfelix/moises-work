@@ -244,26 +244,30 @@ const performSearch = () => {
         const title = (a.title || "");
         const excerpt = (a.excerpt || "");
         const category = (a.category || "");
+        // Concatenar tags em uma string para busca
+        const tags = Array.isArray(a.tags) ? a.tags.join(" ") : (a.tags || "");
         // Remover tags HTML para buscar no texto puro
         const contentRaw = a.content ? a.content.replace(/<[^>]*>?/gm, ' ') : "";
 
         const foundTitle = title.toLowerCase().includes(query);
         const foundExcerpt = excerpt.toLowerCase().includes(query);
         const foundCategory = category.toLowerCase().includes(query);
+        const foundTags = tags.toLowerCase().includes(query);
         const foundContent = contentRaw.toLowerCase().includes(query);
 
-        if (foundTitle || foundExcerpt || foundCategory || foundContent) {
+        if (foundTitle || foundExcerpt || foundCategory || foundTags || foundContent) {
             let displayExcerpt = excerpt;
             let matchLabel = "";
 
-            // Se achou no conteúdo, mas não no título/resumo, ou para dar mais contexto
-            if (foundContent && !foundTitle && !foundExcerpt) {
+            // Prioridade de exibição do contexto
+            if (foundContent && !foundTitle && !foundExcerpt && !foundTags) {
                  const idx = contentRaw.toLowerCase().indexOf(query);
-                 // Pegar um pedaço ao redor (60 chars antes e depois)
                  const start = Math.max(0, idx - 60);
                  const end = Math.min(contentRaw.length, idx + query.length + 60);
                  displayExcerpt = "..." + contentRaw.substring(start, end) + "...";
                  matchLabel = "Encontrado no conteúdo";
+            } else if (foundTags && !foundTitle) {
+                matchLabel = "Encontrado em tags";
             }
 
             return { 
@@ -332,8 +336,6 @@ const highlightText = (text: string) => {
     border-radius: 2px;
 }
 
-
-<style scoped>
 /* Estilos da Busca Global */
 .global-search-container {
     margin-top: 2rem;
