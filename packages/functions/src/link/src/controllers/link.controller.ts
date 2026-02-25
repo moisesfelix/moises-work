@@ -7,6 +7,149 @@ const MAIN_APP_URL = "https://moises-work-app.web.app";
 class LinkController {
     
     /**
+     * Handler para compartilhamento de projetos
+     */
+    getProjectShare = async (req: Request, res: Response): Promise<Response | void> => {
+        try {
+            const { slug, portfolioId } = req.params;
+
+            if (!slug || !portfolioId) {
+                return res.status(400).send('Missing slug or portfolioId.');
+            }
+
+            const resolvedPortfolioId = await this.resolvePortfolioId(portfolioId);
+
+            const projectRef = db.ref(`portfolios_content/${resolvedPortfolioId}/projects`);
+            const snapshot = await projectRef.once('value');
+            const projects = snapshot.val();
+
+            let project = null;
+            if (Array.isArray(projects)) {
+                project = projects.find((p: any) => p.id === slug || p.slug === slug); // Projetos podem usar ID como slug
+            } else if (projects) {
+                project = Object.values(projects).find((p: any) => p.id === slug || p.slug === slug);
+            }
+
+            if (!project) {
+                return res.status(404).send('Project not found.');
+            }
+
+            // Analytics: Log access asynchronously
+            this.logAccess(resolvedPortfolioId, 'project', slug, req).catch(err => 
+                console.error('[LinkController] Failed to log project access', err)
+            );
+
+            const metaRef = db.ref(`portfolios_meta/${resolvedPortfolioId}`);
+            const metaSnap = await metaRef.once('value');
+            const meta = metaSnap.val();
+            const portfolioSlug = meta?.slug || resolvedPortfolioId;
+
+            const targetUrl = `${MAIN_APP_URL}/${portfolioSlug}/projeto/${slug}`;
+            const isShareLink = req.path.includes('/share/');
+
+            if (isShareLink) {
+                const html = this.generateMetaHtml(
+                    project.title,
+                    project.description || 'Confira este projeto incrível!',
+                    project.image || 'https://placehold.co/1200x630?text=Project',
+                    targetUrl,
+                    'website'
+                );
+                res.setHeader('Content-Type', 'text/html; charset=utf-8');
+                res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=600');
+                return res.send(html);
+            } else {
+                 return await this.serveIndexWithMeta(res, {
+                    title: project.title,
+                    description: project.description || 'Confira este projeto incrível!',
+                    image: project.image || 'https://placehold.co/1200x630?text=Project',
+                    url: targetUrl,
+                    type: 'website'
+                });
+            }
+
+        } catch (error) {
+            console.error('Error in getProjectShare:', error);
+            return res.status(500).send('Internal Server Error');
+        }
+    }
+
+    /**
+     * Endpoint de DEBUG para validar meta tags de projeto
+     */
+    debugProject = async (req: Request, res: Response): Promise<Response> => {
+        try {
+            const { portfolioId, slug } = req.params;
+            
+            if (!slug || !portfolioId) {
+                return res.status(400).json({ error: 'Missing slug or portfolioId' });
+            }
+
+            const resolvedId = await this.resolvePortfolioId(portfolioId);
+            const projectRef = db.ref(`portfolios_content/${resolvedId}/projects`);
+            const snapshot = await projectRef.once('value');
+            const projects = snapshot.val();
+            
+            let project = null;
+            if (Array.isArray(projects)) {
+                project = projects.find((p: any) => p.id === slug || p.slug === slug);
+            } else if (projects) {
+                project = Object.values(projects || {}).find((p: any) => p.id === slug || p.slug === slug);
+            }
+            
+            if (!project) {
+                return res.status(404).json({ error: 'Project not found' });
+            }
+
+            const metaRef = db.ref(`portfolios_meta/${resolvedId}`);
+            const metaSnap = await metaRef.once('value');
+            const meta = metaSnap.val();
+            const portfolioSlug = meta?.slug || resolvedId;
+            
+            const shareUrl = `${MAIN_APP_URL}/share/${portfolioId}/project/${slug}`;
+            
+            return res.json({
+                success: true,
+                project: {
+                    title: project.title,
+                    description: project.description,
+                    image: project.image,
+                    id: project.id,
+                    slug: slug, // Usando o slug da rota
+                    technologies: project.technologies || []
+                },
+                urls: {
+                    share: shareUrl,
+                    direct: `${MAIN_APP_URL}/${portfolioSlug}/projeto/${slug}`,
+                    canonical: `${MAIN_APP_URL}/${portfolioSlug}/projeto/${slug}`
+                },
+                metaTags: {
+                    'og:type': 'website',
+                    'og:title': project.title,
+                    'og:description': project.description || '',
+                    'og:image': project.image,
+                    'og:url': `${MAIN_APP_URL}/${portfolioSlug}/projeto/${slug}`,
+                    'og:site_name': 'Moisés Felix - Portfólio',
+                    'og:locale': 'pt_BR'
+                },
+                validation: {
+                    hasImage: !!project.image,
+                    imageHttps: project.image?.startsWith('https://') || false,
+                    titleLength: project.title?.length || 0,
+                    descriptionLength: (project.description || '').length
+                }
+            });
+
+        } catch (error: any) {
+            console.error('Error in debugProject:', error);
+            return res.status(500).json({ 
+                error: 'Internal Server Error', 
+                details: error.message 
+            });
+        }
+    }
+
+    /**
      * Helper to resolve portfolio ID from Slug if needed
      */
     async resolvePortfolioId(idOrSlug: string): Promise<string> {
@@ -39,7 +182,7 @@ class LinkController {
      */
     private async logAccess(
         portfolioId: string,
-        type: 'article' | 'tutorial',
+        type: 'article' | 'tutorial' | 'project',
         slug: string,
         req: Request
     ) {
@@ -139,11 +282,13 @@ class LinkController {
                 console.error('[LinkController] Failed to log article access', err)
             );
 
+            // Fetch Meta Info to construct correct URL
             const metaRef = db.ref(`portfolios_meta/${resolvedPortfolioId}`);
             const metaSnap = await metaRef.once('value');
             const meta = metaSnap.val();
             const portfolioSlug = meta?.slug || resolvedPortfolioId;
 
+            // Define URL baseada no slug do portfolio, não no ID
             const targetUrl = `${MAIN_APP_URL}/${portfolioSlug}/artigo/${slug}`;
             
             // Check path to distinguish Direct Rewrite vs Share API

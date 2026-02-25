@@ -27,6 +27,10 @@
               <i class="fas fa-external-link-alt"></i>
               <span>Live Demo</span>
             </a>
+            <button @click="shareProject" class="btn-action btn-share">
+              <i class="fas fa-share-alt"></i>
+              <span>Compartilhar</span>
+            </button>
           </div>
 
           <div class="project-tags">
@@ -125,7 +129,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, inject } from 'vue';
 import { useRoute } from 'vue-router';
 import { usePortfoliosStore } from '@/stores/portfolios';
 import { GitHubRepoSDK, GithubUtils } from '@/sdk/GitHubSDK';
@@ -133,10 +137,14 @@ import { marked } from 'marked';
 
 const route            = useRoute();
 const portfoliosStore  = usePortfoliosStore();
+const showToast        = inject("showToast") as (t: { type: string; title: string; message: string }) => void;
+
 const project          = ref<any>(null);
 const loading          = ref(true);
 const githubData       = ref<any>(null);
 const placeholderImage = "https://via.placeholder.com/800x400?text=Project+Cover";
+
+const currentPortfolioId = computed(() => portfoliosStore.activePortfolioId);
 
 const tagList = computed(() => {
   if (!project.value?.tags) return [];
@@ -150,10 +158,47 @@ const renderedReadme = computed(() => {
   return marked(githubData.value.readme);
 });
 
+const shareProject = async () => {
+  if (!project.value || !currentPortfolioId.value) {
+    showToast({ type: "error", title: "Erro", message: "Não foi possível gerar o link." });
+    return;
+  }
+  
+  const isDev    = window.location.hostname === "localhost";
+  const apiBase  = isDev
+    ? "http://127.0.0.1:5001/moises-work-app/us-central1/link"
+    : `${window.location.origin}/share`;
+    
+  // Usa o SLUG se existir, senão o ID
+  const projectSlug = project.value.slug || project.value.id;
+  const shareUrl = `${apiBase}/${currentPortfolioId.value}/project/${projectSlug}`;
+
+  if (navigator.share) {
+    try { 
+      await navigator.share({ 
+        title: project.value.title, 
+        text: project.value.description, 
+        url: shareUrl 
+      }); 
+    } catch (e) { 
+      console.log("Compartilhamento cancelado", e); 
+    }
+  } else {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      showToast({ type: "success", title: "Link Copiado!", message: "Link copiado para a área de transferência." });
+    } catch {
+      showToast({ type: "error", title: "Erro", message: "Não foi possível copiar o link." });
+    }
+  }
+};
+
 onMounted(async () => {
-  const projectId = route.params.id as string;
+  const projectSlug = route.params.id as string; // Usando "id" como slug na rota, mas vamos tratar como slug
   await portfoliosStore.fetchPortfolioData();
-  project.value = portfoliosStore.projects.find((p: any) => p.id === projectId);
+  
+  // Tentar encontrar por ID ou por Slug
+  project.value = portfoliosStore.projects.find((p: any) => p.id === projectSlug || p.slug === projectSlug);
 
   if (project.value?.githubUrl) {
     await loadGithubData(project.value.githubUrl);
@@ -310,6 +355,16 @@ const loadGithubData = async (url: string) => {
 
 .btn-action.btn-demo:hover {
   background: #27ae60;
+  color: white;
+}
+
+.btn-action.btn-share {
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.btn-action.btn-share:hover {
+  background: #8b5cf6;
   color: white;
 }
 

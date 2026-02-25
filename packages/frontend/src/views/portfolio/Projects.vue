@@ -44,7 +44,7 @@
           v-for="project in filteredProjects" 
           :key="project.id" 
           :project="project"  
-          @click="viewProject(project.id)"
+          @click="viewProject(project)"
         />
       </div>
 
@@ -120,13 +120,14 @@ const filteredProjects = computed(() => {
   return result;
 });
 
-const viewProject = (id: string) => {
+const viewProject = (project: any) => {
   if (portfoliosStore.activePortfolioSlug) {
+    const slug = project.slug || project.id;
     router.push({ 
       name: 'PortfolioProject', 
       params: { 
         slug: portfoliosStore.activePortfolioSlug,
-        id 
+        id: slug 
       } 
     });
   }

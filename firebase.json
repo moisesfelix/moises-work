@@ -34,6 +34,10 @@
           "function": "link"
         },
         {
+          "source": "/*/projeto/*",
+          "function": "link"
+        },
+        {
           "source": "**",
           "destination": "/index.html"
         }
@@ -59,6 +63,15 @@
         },
         {
           "source": "/*/tutorial/*",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=300, s-maxage=600"
+            }
+          ]
+        },
+        {
+          "source": "/*/projeto/*",
           "headers": [
             {
               "key": "Cache-Control",
