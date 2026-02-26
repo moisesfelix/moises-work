@@ -44,7 +44,7 @@
 import { ref, inject } from 'vue';
 
 const newsletterEmail = ref('');
-const isCollapsed = ref(false); // Estado para controlar a visibilidade do footer
+const isCollapsed = ref(true); // Estado para controlar a visibilidade do footer
 
 const showToast = inject('showToast') as (message: string) => void;
 
