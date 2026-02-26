@@ -39,6 +39,12 @@
               </td>
               <td class="text-muted">{{ truncateText(project.description, 60) }}</td>
               <td class="actions-cell">
+                <button @click="navigateToProject(project)" class="btn-icon view" title="Ver Publicado">
+                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                   </svg>
+                </button>
                 <button @click="openShareModal(project)" class="btn-icon share" title="Compartilhar">
                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
@@ -217,6 +223,7 @@ const sdk = inject('sdk') as AppSDK;
 const authStore = useAuthStore();
 const userStore = useUserStore();
 const portfoliosStore  = usePortfoliosStore();
+const activeSlug         = computed(() => portfoliosStore.activePortfolioSlug);
 const projects         = computed(() => portfoliosStore.projects);
 const showProjectDialog = ref(false);
 const showAIModal      = ref(false);
@@ -239,6 +246,14 @@ const projectForm = ref({
 onMounted(() => portfoliosStore.fetchPortfolioData());
 
 const truncateText = (text: string, length: number) => !text ? "" : text.length > length ? text.substring(0, length) + "..." : text;
+
+const navigateToProject = (project: any) => {
+  if (activeSlug.value && (project.slug || project.id)) {
+    window.open(`/${activeSlug.value}/projeto/${project.slug || project.id}`, '_blank');
+  } else {
+    alert("Não foi possível abrir o projeto. Verifique se o slug existe.");
+  }
+};
 
 const openShareModal = (project: any) => { sharingProject.value = project; showShareModal.value = true; };
 const closeShareModal = () => { showShareModal.value = false; sharingProject.value = null; };
@@ -547,6 +562,11 @@ const deleteProject = async (project: any) => {
 .btn-icon.share {
   color: #2ecc71;
   background-color: #eafaf1;
+}
+
+.btn-icon.view {
+  color: #3498db;
+  background-color: #ebf5fb;
 }
 
 /* Upload Area Styles (NOVO) */

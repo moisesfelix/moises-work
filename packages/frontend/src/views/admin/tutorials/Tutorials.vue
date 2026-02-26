@@ -56,6 +56,12 @@
                 <span class="status-dot active"></span> Publicado
               </td>
               <td class="actions-cell">
+                <button @click="navigateToTutorial(tutorial)" class="btn-icon view" title="Ver Publicado">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
                 <button @click="openShareModal(tutorial)" class="btn-icon share" title="Compartilhar">
                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
@@ -266,6 +272,7 @@ const portfoliosStore   = usePortfoliosStore();
 const uiStore           = useUiStore();
 const aiStore           = useAiStore();
 const tutorials         = computed(() => portfoliosStore.tutorials || []);
+const activeSlug        = computed(() => portfoliosStore.activePortfolioSlug);
 const loading           = computed(() => uiStore.isLoading);
 const showAIModal       = ref(false);
 const showTutorialDialog = ref(false);
@@ -298,6 +305,14 @@ const handleImageUpload = async (event: Event) => {
   finally { isUploading.value = false; }
 };
 const removeImage = () => { tutorialForm.value.image = ""; };
+
+const navigateToTutorial = (tutorial: any) => {
+  if (activeSlug.value && tutorial.slug) {
+    window.open(`/${activeSlug.value}/tutorial/${tutorial.slug}`, '_blank');
+  } else {
+    alert("Não foi possível abrir o tutorial. Verifique se o slug existe.");
+  }
+};
 
 const openAIModal  = () => { aiForm.value = { topic: "", category: "", difficulty: "Iniciante", duration: "" }; showAIModal.value = true; };
 const closeAIModal = () => { if (!generating.value) showAIModal.value = false; };
@@ -555,6 +570,11 @@ const handleDeleteTutorial = async (tutorial: any) => {
 .btn-icon.share {
   color: #2ecc71;
   background-color: #eafaf1;
+}
+
+.btn-icon.view {
+  color: #3498db;
+  background-color: #ebf5fb;
 }
 
 /* =========================================

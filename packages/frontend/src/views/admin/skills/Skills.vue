@@ -14,6 +14,12 @@
         <button class="btn btn-primary" @click="openAddCategoryDialog">
           + Nova Categoria
         </button>
+        <button class="btn btn-outline" @click="navigateToSkills" style="margin-left: 10px;">
+           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+           </svg>
+        </button>
       </div>
       <div v-for="(tools, category) in skills" :key="category" class="card">
         <div class="card-header">
@@ -153,6 +159,7 @@ import { apiGeminiService }   from "@/services/api.gemini.service";
 const portfoliosStore      = usePortfoliosStore();
 const uiStore              = useUiStore();
 const skills               = computed(() => portfoliosStore.skills);
+const activeSlug           = computed(() => portfoliosStore.activePortfolioSlug);
 const loading              = computed(() => uiStore.isLoading);
 const showCategoryDialog   = ref(false);
 const showToolDialog       = ref(false);
@@ -187,6 +194,14 @@ const saveAISkills = async () => {
 };
 
 const openAddCategoryDialog = () => { categoryForm.value.name = ""; showCategoryDialog.value = true; };
+
+const navigateToSkills = () => {
+  if (activeSlug.value) {
+    window.open(`/${activeSlug.value}/habilidades`, '_blank');
+  } else {
+    alert("Não foi possível abrir as habilidades. Verifique se o slug existe.");
+  }
+};
 
 const saveCategory = async () => {
   if (!categoryForm.value.name) return;

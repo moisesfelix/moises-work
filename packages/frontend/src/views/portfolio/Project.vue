@@ -194,8 +194,18 @@ const shareProject = async () => {
 };
 
 onMounted(async () => {
-  const projectSlug = route.params.id as string; // Usando "id" como slug na rota, mas vamos tratar como slug
-  await portfoliosStore.fetchPortfolioData();
+  const projectSlug = route.params.id as string; // O parâmetro 'id' aqui na rota pode conter o SLUG ou ID
+  
+  // Garante que os dados estejam carregados
+  if (!portfoliosStore.projects || portfoliosStore.projects.length === 0) {
+      // Se não temos dados, tentamos carregar usando o slug da rota pai (parametro :slug no router)
+      const portfolioSlug = route.params.slug as string;
+      if (portfolioSlug) {
+          await portfoliosStore.fetchPortfolioData(portfolioSlug);
+      } else {
+          await portfoliosStore.fetchPortfolioData();
+      }
+  }
   
   // Tentar encontrar por ID ou por Slug
   project.value = portfoliosStore.projects.find((p: any) => p.id === projectSlug || p.slug === projectSlug);

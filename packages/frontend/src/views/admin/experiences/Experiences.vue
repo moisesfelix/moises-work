@@ -33,6 +33,12 @@
               <td>{{ exp.company }}</td>
               <td class="text-muted">{{ truncateText(exp.description, 60) }}</td>
               <td class="actions-cell">
+                <button @click="navigateToExperience()" class="btn-icon view" title="Ver Publicado">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
                 <button @click="openEditExperienceDialog(exp)" class="btn-icon edit" title="Editar">
                   <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                 </button>
@@ -123,6 +129,7 @@ import { v4 as uuidv4 }       from "uuid";
 const portfoliosStore = usePortfoliosStore();
 const uiStore         = useUiStore();
 const experiences     = computed(() => portfoliosStore.experiences || []);
+const activeSlug      = computed(() => portfoliosStore.activePortfolioSlug);
 const loading         = computed(() => uiStore.isLoading);
 
 const showExperienceDialog = ref(false);
@@ -180,6 +187,14 @@ const generateDescription = async () => {
     experienceForm.value.description = result.replace(/[*#_]/g, "").trim();
   } catch { alert("Falha ao gerar descrição."); }
   finally   { generating.value = false; }
+};
+
+const navigateToExperience = () => {
+  if (activeSlug.value) {
+    window.open(`/${activeSlug.value}/experiencia`, '_blank');
+  } else {
+    alert("Não foi possível abrir a experiência. Verifique se o slug existe.");
+  }
 };
 
 const truncateText = (text: string, length: number) => !text ? "" : text.length > length ? text.substring(0, length) + "..." : text;
@@ -246,6 +261,11 @@ const truncateText = (text: string, length: number) => !text ? "" : text.length 
 }
 .btn-icon.edit { color: #5b5fab; }
 .btn-icon.delete { color: #e74c3c; }
+
+.btn-icon.view {
+  color: #3498db;
+  background-color: #ebf5fb;
+}
 
 /* Modal */
 .modal-overlay {
